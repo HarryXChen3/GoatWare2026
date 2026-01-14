@@ -17,9 +17,11 @@ import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.closeables.ToClose;
 import frc.robot.utils.control.DeltaTime;
@@ -53,17 +55,24 @@ public class HoodIOSim implements HoodIO {
         this.motor = new TalonFX(constants.motorId(), p6Bus);
 
         final DCMotor dcMotor = DCMotor.getKrakenX44Foc(1);
-        final DCMotorSim dcMotorSim = new DCMotorSim(
+        final SingleJointedArmSim dcMotorSim = new SingleJointedArmSim(
                 LinearSystemId.createSingleJointedArmSystem(dcMotor, 0.01, constants.gearing()),
-                dcMotor
+                dcMotor,
+                constants.gearing(),
+                Units.inchesToMeters(8),
+                Units.rotationsToRadians(constants.lowerLimitRots()),
+                Units.rotationsToRadians(constants.upperLimitRots()),
+                false,
+                0
         );
+
         this.motorTalonFXSim = new TalonFXSim(
                 motor,
                 constants.gearing(),
                 dcMotorSim::update,
                 dcMotorSim::setInputVoltage,
-                dcMotorSim::getAngularPositionRad,
-                dcMotorSim::getAngularVelocityRadPerSec
+                dcMotorSim::getAngleRads,
+                dcMotorSim::getVelocityRadPerSec
         );
 
         this.positionVoltage = new PositionVoltage(0);

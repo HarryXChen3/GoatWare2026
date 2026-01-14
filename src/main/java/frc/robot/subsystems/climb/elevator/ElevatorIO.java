@@ -1,6 +1,6 @@
 package frc.robot.subsystems.climb.elevator;
 
-import frc.robot.subsystems.intake.arm.IntakeArmIO;
+import frc.robot.subsystems.intake.slide.IntakeSlideIO;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ElevatorIO {
@@ -13,7 +13,7 @@ public interface ElevatorIO {
         public double motorTempCelsius = 0;
     }
 
-    default void updateInputs(final IntakeArmIO.IntakeArmIOInputs inputs) {}
+    default void updateInputs(final IntakeSlideIO.IntakeArmIOInputs inputs) {}
 
     default void config() {}
 

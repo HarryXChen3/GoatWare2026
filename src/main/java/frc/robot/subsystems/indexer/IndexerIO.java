@@ -1,6 +1,5 @@
 package frc.robot.subsystems.indexer;
 
-import frc.robot.subsystems.intake.arm.IntakeArmIO;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface IndexerIO {
@@ -19,7 +18,7 @@ public interface IndexerIO {
         public double rightTempCelsius = 0;
     }
 
-    default void updateInputs(final IntakeArmIO.IntakeArmIOInputs inputs) {}
+    default void updateInputs(final IndexerIOInputs inputs) {}
 
     default void config() {}
 }

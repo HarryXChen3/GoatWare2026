@@ -1,8 +1,8 @@
-package frc.robot.subsystems.intake.arm;
+package frc.robot.subsystems.intake.slide;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface IntakeArmIO {
+public interface IntakeSlideIO {
     @AutoLog
     class IntakeArmIOInputs {
         public double pivotPositionRots = 0;
