@@ -28,12 +28,18 @@ public class Container<T> implements Supplier<T> {
         this.value = value;
     }
 
+    public void clear() { this.value = null; }
+
     public Command setCommand(final Supplier<T> valueSupplier) {
         return Commands.runOnce(() -> this.set(valueSupplier.get())).withName("Container");
     }
 
     public Command setCommand(final T value) {
         return setCommand(() -> value);
+    }
+
+    public Command clearCommand() {
+        return Commands.runOnce(this::clear);
     }
 
     public static <T> Container<T> of(final T value) {

@@ -7,11 +7,13 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.superstructure.hood.Hood;
 import frc.robot.subsystems.superstructure.shooter.Shooter;
 import frc.robot.subsystems.superstructure.turret.Turret;
+import frc.robot.utils.Container;
 import frc.robot.utils.subsystems.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class Superstructure extends VirtualSubsystem {
     protected static final String LogKey = "Superstructure";
@@ -106,11 +108,24 @@ public class Superstructure extends VirtualSubsystem {
         );
     }
 
-    public Command trackHub() {
+    public Command runParameters(final Supplier<ShotParameters> shotParametersSupplier) {
+        final Container<ShotParameters> parameters = Container.empty();
+        final Supplier<ShotParameters> cached = () -> {
+            final ShotParameters maybe = parameters.get();
+            if (maybe != null) {
+                return maybe;
+            }
+
+            final ShotParameters params = shotParametersSupplier.get();
+            parameters.set(params);
+            return params;
+        };
+
         return Commands.parallel(
-                hood.runPosition(() -> 0.05),
                 turret.runPosition(() -> 1),
-                shooter.runVelocity(() -> 20)
+                hood.runPosition(() -> cached.get().hoodPositionRots()),
+                shooter.runVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
+                parameters.clearCommand()
         );
     }
 }
