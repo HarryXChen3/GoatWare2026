@@ -1,4 +1,4 @@
 package frc.robot.subsystems.indexer;
 
-public class IndexerIOReal {
+public class IndexerIOReal implements IndexerIO {
 }

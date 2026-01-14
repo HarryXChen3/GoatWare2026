@@ -42,7 +42,7 @@ public class TurretIOSim implements TurretIO {
     private final CANcoder primaryCANcoder;
     private final CANcoder secondaryCANcoder;
 
-    private final TalonFXSim motorTalonFXSim;
+    private final TalonFXSim motorSim;
 
     private final PositionVoltage positionVoltage;
     private final MotionMagicExpoVoltage motionMagicExpoVoltage;
@@ -77,7 +77,7 @@ public class TurretIOSim implements TurretIO {
                 ),
                 dcMotor
         );
-        this.motorTalonFXSim = new TalonFXSim(
+        this.motorSim = new TalonFXSim(
                 motor,
                 motorToTurretGearing,
                 dcMotorSim::update,
@@ -85,7 +85,7 @@ public class TurretIOSim implements TurretIO {
                 dcMotorSim::getAngularPositionRad,
                 dcMotorSim::getAngularVelocityRadPerSec
         );
-        this.motorTalonFXSim.attachFeedbackSensor(new SimTurretCANcoders(constants, primaryCANcoder, secondaryCANcoder));
+        this.motorSim.attachFeedbackSensor(new SimTurretCANcoders(constants, primaryCANcoder, secondaryCANcoder));
 
         this.positionVoltage = new PositionVoltage(0);
         this.motionMagicExpoVoltage = new MotionMagicExpoVoltage(0);
@@ -113,7 +113,7 @@ public class TurretIOSim implements TurretIO {
 
         final Notifier simUpdateNotifier = new Notifier(() -> {
             final double dt = deltaTime.get();
-            motorTalonFXSim.update(dt);
+            motorSim.update(dt);
         });
         ToClose.add(simUpdateNotifier);
         simUpdateNotifier.setName(String.format(

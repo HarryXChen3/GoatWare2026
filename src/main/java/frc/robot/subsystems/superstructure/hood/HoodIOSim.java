@@ -20,7 +20,6 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.closeables.ToClose;
@@ -35,7 +34,7 @@ public class HoodIOSim implements HoodIO {
     private final HardwareConstants.HoodConstants constants;
 
     private final TalonFX motor;
-    private final TalonFXSim motorTalonFXSim;
+    private final TalonFXSim motorSim;
 
     private final PositionVoltage positionVoltage;
     private final VoltageOut voltageOut;
@@ -66,7 +65,7 @@ public class HoodIOSim implements HoodIO {
                 0
         );
 
-        this.motorTalonFXSim = new TalonFXSim(
+        this.motorSim = new TalonFXSim(
                 motor,
                 constants.gearing(),
                 dcMotorSim::update,
@@ -95,7 +94,7 @@ public class HoodIOSim implements HoodIO {
 
         final Notifier simUpdateNotifier = new Notifier(() -> {
             final double dt = deltaTime.get();
-            motorTalonFXSim.update(dt);
+            motorSim.update(dt);
         });
         ToClose.add(simUpdateNotifier);
         simUpdateNotifier.setName(String.format(

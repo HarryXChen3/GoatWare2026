@@ -36,7 +36,7 @@ public class ShooterIOSim implements ShooterIO {
     private final TalonFX masterMotor;
     private final TalonFX followerMotor;
 
-    private final TalonFXSim motorsTalonFXSim;
+    private final TalonFXSim motorsSim;
 
     private final VelocityTorqueCurrentFOC velocityTorqueCurrentFOC;
     private final VoltageOut voltageOut;
@@ -68,7 +68,7 @@ public class ShooterIOSim implements ShooterIO {
                 LinearSystemId.createDCMotorSystem(dcMotor, 0.01, constants.gearing()),
                 dcMotor
         );
-        this.motorsTalonFXSim = new TalonFXSim(
+        this.motorsSim = new TalonFXSim(
                 List.of(masterMotor, followerMotor),
                 constants.gearing(),
                 dcMotorSim::update,
@@ -109,7 +109,7 @@ public class ShooterIOSim implements ShooterIO {
 
         final Notifier simUpdateNotifier = new Notifier(() -> {
             final double dt = deltaTime.get();
-            motorsTalonFXSim.update(dt);
+            motorsSim.update(dt);
         });
         ToClose.add(simUpdateNotifier);
         simUpdateNotifier.setName(String.format(

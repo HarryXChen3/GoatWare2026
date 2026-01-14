@@ -5,20 +5,18 @@ import org.littletonrobotics.junction.AutoLog;
 public interface IntakeSlideIO {
     @AutoLog
     class IntakeArmIOInputs {
-        public double pivotPositionRots = 0;
-        public double pivotVelocityRotsPerSec = 0;
-        public double pivotVoltage = 0;
-        public double pivotTorqueCurrentAmps = 0;
-        public double pivotTempCelsius = 0;
-
-        public double pivotEncoderPositionRots;
+        public double slidePositionRots = 0;
+        public double slideVelocityRotsPerSec = 0;
+        public double slideVoltage = 0;
+        public double slideTorqueCurrentAmps = 0;
+        public double slideTempCelsius = 0;
     }
 
     default void updateInputs(final IntakeArmIOInputs inputs) {}
 
     default void config() {}
 
-    default void toIntakeArmPosition(final double intakeArmPositionRots) {}
+    default void toSlidePosition(final double slidePositionRots) {}
 
-    default void toIntakeArmVoltage(final double intakeArmVolts) {}
+    default void toSlideVoltage(final double slideVolts) {}
 }

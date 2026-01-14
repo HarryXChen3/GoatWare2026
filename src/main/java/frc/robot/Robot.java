@@ -19,6 +19,9 @@ import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.RobotMap;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
+import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.intake.rollers.Intake;
+import frc.robot.subsystems.intake.slide.IntakeSlide;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.hood.Hood;
 import frc.robot.subsystems.superstructure.shooter.Shooter;
@@ -56,7 +59,7 @@ public class Robot extends LoggedRobot {
     };
 
     public final PowerDistribution powerDistribution = new PowerDistribution(
-            RobotMap.PowerDistributionHub, PowerDistribution.ModuleType.kRev
+            HardwareConstants.PowerDistributionHub, PowerDistribution.ModuleType.kRev
     );
 
     public final Swerve swerve = new Swerve(
@@ -96,6 +99,19 @@ public class Robot extends LoggedRobot {
 
     public final Superstructure superstructure = new Superstructure(
             hood, shooter, turret
+    );
+
+    public final Indexer indexer = new Indexer();
+
+    public final Intake intake = new Intake(
+            Constants.CURRENT_MODE,
+            HardwareConstants.INTAKE_CONSTANTS
+    );
+
+    public final IntakeSlide intakeSlide = new IntakeSlide();
+
+    public final ShootCommands shootCommands = new ShootCommands(
+            swerve, indexer, superstructure
     );
 
     public final Autos autos = new Autos(
@@ -261,8 +277,6 @@ public class Robot extends LoggedRobot {
                         driverController::getRightX
                 )
         );
-
-//        CommandScheduler.getInstance().schedule(superstructure.runParameters());
     }
 
     @Override
@@ -302,22 +316,24 @@ public class Robot extends LoggedRobot {
 
 //        autoChooser.addAutoOption(new AutoOption(
 //                "Auto",
-//                autos::Auti,
+//                autos::Auto,
 //                Constants.CompetitionType.COMPETITION
 //        ));
     }
 
     public void configureButtonBindings(final EventLoop teleopEventLoop) {
-        this.driverController.rightBumper(teleopEventLoop)
+        driverController.rightBumper(teleopEventLoop)
                 .whileTrue(Commands.startEnd(
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.FAST),
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
                 ).withName("SwerveSpeedFast"));
 
-        this.driverController.leftBumper(teleopEventLoop)
+        driverController.leftBumper(teleopEventLoop)
                 .whileTrue(Commands.startEnd(
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.SLOW),
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
                 ).withName("SwerveSpeedSlow"));
+
+        driverController.a().whileTrue(shootCommands.stopAndShoot());
     }
 }

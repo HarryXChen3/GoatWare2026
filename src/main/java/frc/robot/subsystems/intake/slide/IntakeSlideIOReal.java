@@ -1,4 +1,4 @@
 package frc.robot.subsystems.intake.slide;
 
-public class IntakeSlideIOReal {
+public class IntakeSlideIOReal implements IntakeSlideIO {
 }

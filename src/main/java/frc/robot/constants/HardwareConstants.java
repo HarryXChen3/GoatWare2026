@@ -1,6 +1,8 @@
 package frc.robot.constants;
 
 public class HardwareConstants {
+    public static final int PowerDistributionHub = 1;
+
     public enum CANBus {
         RIO("rio"),
         CANIVORE("CANivore");
@@ -113,5 +115,30 @@ public class HardwareConstants {
             18,
             19,
             2
+    );
+
+    public record IntakeConstants(
+            CANBus CANBus,
+            int motorId,
+            double gearing
+    ) {}
+
+    public static final IntakeConstants INTAKE_CONSTANTS = new IntakeConstants(
+            CANBus.CANIVORE,
+            20,
+            2
+    );
+
+    public record IntakeSlideConstants(
+            CANBus CANBus,
+            int motorId,
+            double gearing
+    ) {}
+
+    public static final IntakeSlideConstants INTAKE_SLIDE_CONSTANTS = new IntakeSlideConstants(
+            CANBus.CANIVORE,
+            21,
+            80
+
     );
 }
