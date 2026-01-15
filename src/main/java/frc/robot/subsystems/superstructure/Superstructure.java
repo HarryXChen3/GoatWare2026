@@ -8,7 +8,6 @@ import frc.robot.subsystems.superstructure.hood.Hood;
 import frc.robot.subsystems.superstructure.shooter.Shooter;
 import frc.robot.subsystems.superstructure.turret.Turret;
 import frc.robot.utils.Container;
-import frc.robot.utils.commands.FastCommands;
 import frc.robot.utils.subsystems.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
@@ -115,33 +114,21 @@ public class Superstructure extends VirtualSubsystem {
             final DoubleSupplier turretPositionSupplier
     ) {
         final Container<ShotParameters> parameters = Container.empty();
+        final Supplier<ShotParameters> cached = () -> {
+            if (parameters.hasValue()) {
+                return parameters.get();
+            }
+
+            final ShotParameters params = shotParametersSupplier.get();
+            parameters.set(params);
+            return params;
+        };
 
         return Commands.parallel(
-                FastCommands.repeatedly(parameters.setCommand(shotParametersSupplier)),
                 turret.runPosition(turretPositionSupplier),
-                hood.runPosition(() -> parameters.get().hoodPositionRots()),
-                shooter.runVelocity(() -> parameters.get().shooterVelocityRotsPerSec())
+                hood.runPosition(() -> cached.get().hoodPositionRots()),
+                shooter.runVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
+                Commands.run(parameters::clear)
         );
     }
-
-//    public Command runParameters(final Supplier<ShotParameters> shotParametersSupplier) {
-//        final Container<ShotParameters> parameters = Container.empty();
-//        final Supplier<ShotParameters> cached = () -> {
-//            final ShotParameters maybe = parameters.get();
-//            if (maybe != null) {
-//                return maybe;
-//            }
-//
-//            final ShotParameters params = shotParametersSupplier.get();
-//            parameters.set(params);
-//            return params;
-//        };
-//
-//        return Commands.parallel(
-//                turret.runPosition(() -> 1),
-//                hood.runPosition(() -> cached.get().hoodPositionRots()),
-//                shooter.runVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
-//                parameters.clearCommand()
-//        );
-//    }
 }
