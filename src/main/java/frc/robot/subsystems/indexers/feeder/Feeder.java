@@ -17,7 +17,8 @@ public class Feeder extends SubsystemBase {
     private static final double VelocityToleranceRotsPerSec = 0.1;
 
     public enum Goal {
-        IDLE(1.2);
+        IDLE(1.2),
+        FEED(5);
 
         public final double velocityRotsPerSec;
 
@@ -28,7 +29,8 @@ public class Feeder extends SubsystemBase {
 
     private enum InternalGoal {
         NONE,
-        IDLE(Goal.IDLE);
+        IDLE(Goal.IDLE),
+        FEED(Goal.FEED);
 
         public static final HashMap<Goal, InternalGoal> GoalToInternal = new HashMap<>();
         static {

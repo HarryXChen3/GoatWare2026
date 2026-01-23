@@ -152,4 +152,16 @@ public class HardwareConstants {
             22,
             3
     );
+
+    public record HopperConstants(
+            CANBus CANBus,
+            int motorId,
+            double gearing
+    ) {}
+
+    public static final HopperConstants HOPPER_CONSTANTS = new HopperConstants(
+            CANBus.CANIVORE,
+            23,
+            3
+    );
 }

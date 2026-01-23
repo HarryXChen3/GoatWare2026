@@ -18,6 +18,9 @@ public class Indexer {
     }
 
     public Command runFeed() {
-        return Commands.run(() -> {});
+        return Commands.parallel(
+                hopper.toGoal(Hopper.Goal.FEED),
+                feeder.toGoal(Feeder.Goal.FEED)
+        );
     }
 }

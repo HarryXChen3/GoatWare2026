@@ -100,7 +100,7 @@ public class Robot extends LoggedRobot {
             turret, shooter, hood
     );
 
-    public final Hopper hopper = new Hopper();
+    public final Hopper hopper = new Hopper(Constants.CURRENT_MODE, HardwareConstants.HOPPER_CONSTANTS);
     public final Feeder feeder = new Feeder(Constants.CURRENT_MODE, HardwareConstants.FEEDER_CONSTANTS);
     public final Indexer indexer = new Indexer(hopper, feeder);
 
