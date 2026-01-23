@@ -3,12 +3,15 @@ package frc.robot;
 import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.auto.AutoChooser;
@@ -17,6 +20,7 @@ import frc.robot.auto.Autos;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.RobotMap;
+import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
 import frc.robot.subsystems.indexers.Indexer;
@@ -257,13 +261,13 @@ public class Robot extends LoggedRobot {
         coControllerDisconnected.set(!coController.getHID().isConnected());
 
         final Pose3d[] superstructurePoses = superstructure.getComponentPoses();
-        Logger.recordOutput("ZeroedComponents", Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero);
+        Logger.recordOutput("ZeroedComponents", Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero);
         Logger.recordOutput("Components",
                 superstructurePoses[0],
                 Pose3d.kZero,
                 Pose3d.kZero,
                 superstructurePoses[1],
-                Pose3d.kZero
+                new Pose3d(SimConstants.Hopper.OCTOPUS_ORIGIN_OFFSET, new Rotation3d(0, 0, -5 * Timer.getFPGATimestamp()))
         );
 
 //        Threads.setCurrentThreadPriority(false, 10);
@@ -285,6 +289,14 @@ public class Robot extends LoggedRobot {
                         driverController::getRightX
                 )
         );
+
+        final CommandScheduler scheduler = CommandScheduler.getInstance();
+        final Subsystem ghost = new Subsystem() {};
+        scheduler.registerSubsystem(ghost);
+
+        final Command trackHubCommand = shootCommands.trackHub();
+        trackHubCommand.addRequirements(ghost);
+        scheduler.setDefaultCommand(ghost, trackHubCommand);
     }
 
     @Override

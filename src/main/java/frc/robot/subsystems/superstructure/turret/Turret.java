@@ -2,6 +2,7 @@ package frc.robot.subsystems.superstructure.turret;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -12,7 +13,7 @@ import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 public class Turret extends SubsystemBase {
     protected static final String LogKey = "Turret";
@@ -60,6 +61,8 @@ public class Turret extends SubsystemBase {
         }
     }
 
+    private final HardwareConstants.TurretConstants constants;
+
     private final TurretIO turretIO;
     private final TurretIOInputsAutoLogged inputs;
 
@@ -69,6 +72,7 @@ public class Turret extends SubsystemBase {
     private double positionSetpointRots;
 
     public Turret(final Constants.RobotMode mode, final HardwareConstants.TurretConstants constants) {
+        this.constants = constants;
         this.turretIO = switch (mode) {
             case REAL -> new TurretIOReal(constants);
             case SIM -> new TurretIOSim(constants);
@@ -116,6 +120,10 @@ public class Turret extends SubsystemBase {
         );
     }
 
+    public Transform2d getOffsetFromCenter() {
+        return constants.offsetFromCenter();
+    }
+
     public Rotation2d getPosition() {
         return Rotation2d.fromRotations(inputs.motorPositionRots);
     }
@@ -126,12 +134,13 @@ public class Turret extends SubsystemBase {
 
     private void setPositionImpl(final double positionRots) {
         positionSetpointRots = positionRots;
-        turretIO.toTurretPosition(positionSetpointRots);
+        turretIO.trackTurretPosition(positionSetpointRots);
     }
 
     private void setGoalImpl(final Goal goal) {
         desiredGoal = InternalGoal.fromGoal(goal);
-        setPositionImpl(goal.positionRots);
+        positionSetpointRots = goal.positionRots;
+        turretIO.toTurretPosition(positionSetpointRots);
     }
 
     public Command toGoal(final Goal goal) {
@@ -145,13 +154,20 @@ public class Turret extends SubsystemBase {
         return run(() -> setGoalImpl(goal));
     }
 
-    public Command toPosition(final DoubleSupplier positionRotsSupplier) {
+    public Command toPosition(final Supplier<Rotation2d> positionSupplier) {
         return runEnd(
                 () -> {
                     desiredGoal = InternalGoal.TRACKING;
-                    setPositionImpl(positionRotsSupplier.getAsDouble());
+                    setPositionImpl(positionSupplier.get().getRotations());
                 },
                 () -> setGoalImpl(Goal.IDLE)
         );
+    }
+
+    public Command runPosition(final Supplier<Rotation2d> positionSupplier) {
+        return run(() -> {
+            desiredGoal = InternalGoal.TRACKING;
+            setPositionImpl(positionSupplier.get().getRotations());
+        });
     }
 }

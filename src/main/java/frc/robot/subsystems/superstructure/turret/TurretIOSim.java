@@ -5,6 +5,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
@@ -145,9 +146,16 @@ public class TurretIOSim implements TurretIO {
                 .withKA(0)
                 .withKP(160)
                 .withKD(4);
+        motorConfiguration.Slot1 = new Slot1Configs()
+                .withKS(0)
+                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
+                .withKV(0)
+                .withKA(0)
+                .withKP(80)
+                .withKD(4);
         motorConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0;
+        motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0.12;
+        motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0.1;
         motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
         motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
         motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
@@ -227,12 +235,16 @@ public class TurretIOSim implements TurretIO {
 
     @Override
     public void trackTurretPosition(final double turretPositionRots) {
-        motor.setControl(positionVoltage.withPosition(turretPositionRots));
+        motor.setControl(positionVoltage
+                .withSlot(0)
+                .withPosition(turretPositionRots));
     }
 
     @Override
     public void toTurretPosition(final double turretPositionRots) {
-        motor.setControl(motionMagicExpoVoltage.withPosition(turretPositionRots));
+        motor.setControl(motionMagicExpoVoltage
+                .withSlot(1)
+                .withPosition(turretPositionRots));
     }
 
     @Override

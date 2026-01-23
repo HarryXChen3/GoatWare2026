@@ -141,4 +141,11 @@ public class Shooter extends SubsystemBase {
                 () -> setGoalImpl(Goal.IDLE)
         );
     }
+
+    public Command runVelocity(final DoubleSupplier velocityRotsPerSecSupplier) {
+        return run(() -> {
+            desiredGoal = InternalGoal.DYNAMIC;
+            setVelocityImpl(velocityRotsPerSecSupplier.getAsDouble());
+        });
+    }
 }

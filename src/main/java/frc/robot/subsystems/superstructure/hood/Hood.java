@@ -141,4 +141,11 @@ public class Hood extends SubsystemBase {
                 () -> setGoalImpl(Goal.STOW)
         );
     }
+
+    public Command runPosition(final DoubleSupplier positionRotsSupplier) {
+        return run(() -> {
+            desiredGoal = InternalGoal.TRACKING;
+            setPositionImpl(positionRotsSupplier.getAsDouble());
+        });
+    }
 }

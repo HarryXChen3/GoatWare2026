@@ -1,5 +1,8 @@
 package frc.robot.constants;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+
 public class HardwareConstants {
     public static final int PowerDistributionHub = 1;
 
@@ -33,7 +36,8 @@ public class HardwareConstants {
             double motorToGearboxGearing,
             double gearboxToTurretGearing,
             double primaryCANcoderGearing,
-            double secondaryCANcoderGearing
+            double secondaryCANcoderGearing,
+            Transform2d offsetFromCenter
     ) {
         public TurretConstants(
                 CANBus CANBus,
@@ -48,7 +52,8 @@ public class HardwareConstants {
                 int drivenTurretGearTeeth,
                 int primaryCANcoderGearTeeth,
                 int secondaryCANcoderGearTeeth,
-                double motorToGearboxGearing
+                double motorToGearboxGearing,
+                Transform2d offsetFromCenter
         ) {
             this(
                     CANBus,
@@ -66,7 +71,8 @@ public class HardwareConstants {
                     motorToGearboxGearing,
                     ((double) drivenTurretGearTeeth) / drivingGearTeeth,
                     ((double) primaryCANcoderGearTeeth) / drivenTurretGearTeeth,
-                    ((double) secondaryCANcoderGearTeeth) / drivenTurretGearTeeth
+                    ((double) secondaryCANcoderGearTeeth) / drivenTurretGearTeeth,
+                    offsetFromCenter
             );
         }
     }
@@ -84,7 +90,8 @@ public class HardwareConstants {
             125,
             31,
             37,
-            52.0 / 14.0
+            52.0 / 14.0,
+            new Transform2d(-0.127, 0, Rotation2d.kZero)
     );
 
     public record HoodConstants(

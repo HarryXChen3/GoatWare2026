@@ -1,8 +1,6 @@
 package frc.robot.subsystems.superstructure;
 
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -18,7 +16,6 @@ import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Superstructure extends VirtualSubsystem {
@@ -101,6 +98,10 @@ public class Superstructure extends VirtualSubsystem {
         );
     }
 
+    public Transform2d getOffsetFromCenter() {
+        return turret.getOffsetFromCenter();
+    }
+
     public Pose3d[] getComponentPoses() {
         final Pose3d turretPose = new Pose3d(
                 SimConstants.Turret.ORIGIN_OFFSET,
@@ -167,9 +168,33 @@ public class Superstructure extends VirtualSubsystem {
         return runGoal(goal).until(atGoal(goal));
     }
 
+    public Command runParameters(
+            final Supplier<ShotParameters> shotParametersSupplier,
+            final Supplier<Rotation2d> turretPositionSupplier
+    ) {
+        final Container<ShotParameters> parameters = Container.empty();
+        final Supplier<ShotParameters> cached = () -> {
+            if (parameters.hasValue()) {
+                return parameters.get();
+            }
+
+            final ShotParameters params = shotParametersSupplier.get();
+            parameters.set(params);
+            return params;
+        };
+
+        return Commands.parallel(
+                updateDesiredGoal(InternalGoal.DYNAMIC),
+                turret.runPosition(turretPositionSupplier),
+                hood.runPosition(() -> cached.get().hoodPositionRots()),
+                shooter.runVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
+                Commands.run(parameters::clear)
+        );
+    }
+
     public Command toParameters(
             final Supplier<ShotParameters> shotParametersSupplier,
-            final DoubleSupplier turretPositionSupplier
+            final Supplier<Rotation2d> turretPositionSupplier
     ) {
         final Container<ShotParameters> parameters = Container.empty();
         final Supplier<ShotParameters> cached = () -> {

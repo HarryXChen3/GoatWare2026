@@ -15,6 +15,10 @@ public interface SimConstants {
 
     }
 
+    interface Hopper {
+        Translation3d OCTOPUS_ORIGIN_OFFSET = new Translation3d(0.122, 0, 0);
+    }
+
     interface HopperExtension {
 
     }

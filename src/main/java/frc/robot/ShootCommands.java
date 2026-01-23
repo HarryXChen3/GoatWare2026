@@ -26,6 +26,21 @@ public class ShootCommands {
         this.superstructure = superstructure;
     }
 
+    private Rotation2d angleToHub(final Pose2d robotPose) {
+        final Pose2d hubPose = FieldConstants.getHubPose();
+        return hubPose.getTranslation()
+                .minus(robotPose.plus(superstructure.getOffsetFromCenter()).getTranslation())
+                .getAngle()
+                .minus(robotPose.getRotation());
+    }
+
+    public Command trackHub() {
+        return superstructure.runParameters(
+                StaticShot.parametersSupplier(swerve::getPose, FieldConstants::getHubPose),
+                () -> angleToHub(swerve.getPose())
+        );
+    }
+
     public Command stopAndShoot() {
         return Commands.deadline(
                 Commands.repeatingSequence(
@@ -35,17 +50,7 @@ public class ShootCommands {
                 ).onlyWhile(indexer.hasFuel),
                 superstructure.toParameters(
                         StaticShot.parametersSupplier(swerve::getPose, FieldConstants::getHubPose),
-                        () -> {
-                            final Pose2d hubPose = FieldConstants.getHubPose();
-                            final Pose2d robotPose = swerve.getPose();
-
-                            final Rotation2d angle = hubPose.getTranslation()
-                                    .minus(robotPose.getTranslation())
-                                    .getAngle()
-                                    .minus(robotPose.getRotation());
-
-                            return angle.getRotations();
-                        }
+                        () -> angleToHub(swerve.getPose())
                 ),
                 swerve.runWheelXCommand()
         );
