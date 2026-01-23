@@ -262,7 +262,8 @@ public class Robot extends LoggedRobot {
                 superstructurePoses[0],
                 Pose3d.kZero,
                 Pose3d.kZero,
-                superstructurePoses[1]
+                superstructurePoses[1],
+                Pose3d.kZero
         );
 
 //        Threads.setCurrentThreadPriority(false, 10);
