@@ -1,4 +1,4 @@
-package frc.robot.subsystems.superstructure.shooter;
+package frc.robot.subsystems.indexers.feeder;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
@@ -11,15 +11,13 @@ import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.function.DoubleSupplier;
 
-public class Shooter extends SubsystemBase {
-    protected static final String LogKey = "Shooter";
-    private static final double VelocityToleranceRotsPerSec = 0.5;
+public class Feeder extends SubsystemBase {
+    protected static final String LogKey = "Feeder";
+    private static final double VelocityToleranceRotsPerSec = 0.1;
 
     public enum Goal {
-        OFF(0),
-        IDLE(20);
+        IDLE(1.2);
 
         public final double velocityRotsPerSec;
 
@@ -30,9 +28,7 @@ public class Shooter extends SubsystemBase {
 
     private enum InternalGoal {
         NONE,
-        OFF(Goal.OFF),
-        IDLE(Goal.IDLE),
-        DYNAMIC;
+        IDLE(Goal.IDLE);
 
         public static final HashMap<Goal, InternalGoal> GoalToInternal = new HashMap<>();
         static {
@@ -58,36 +54,36 @@ public class Shooter extends SubsystemBase {
         }
     }
 
-    private final ShooterIO shooterIO;
-    private final ShooterIOInputsAutoLogged inputs;
+    private final FeederIO feederIO;
+    private final FeederIOInputsAutoLogged inputs;
 
     private InternalGoal desiredGoal = InternalGoal.IDLE;
     private InternalGoal currentGoal = InternalGoal.NONE;
 
     private double velocitySetpointRotsPerSec;
 
-    public Shooter(final Constants.RobotMode mode, final HardwareConstants.ShooterConstants constants) {
-        this.shooterIO = switch (mode) {
-            case REAL -> new ShooterIOReal(constants);
-            case SIM -> new ShooterIOSim(constants);
-            case REPLAY, DISABLED -> new ShooterIO() {};
+    public Feeder(final Constants.RobotMode mode, final HardwareConstants.FeederConstants constants) {
+        this.feederIO = switch (mode) {
+            case REAL -> new FeederIOReal(constants);
+            case SIM -> new FeederIOSim(constants);
+            case REPLAY, DISABLED -> new FeederIO() {};
         };
 
-        this.inputs = new ShooterIOInputsAutoLogged();
+        this.inputs = new FeederIOInputsAutoLogged();
 
-        this.shooterIO.config();
+        this.feederIO.config();
     }
 
     @Override
     public void periodic() {
         final double shooterPeriodicUpdateStart = Timer.getFPGATimestamp();
 
-        shooterIO.updateInputs(inputs);
+        feederIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
         if (MathUtil.isNear(
                 velocitySetpointRotsPerSec,
-                inputs.masterVelocityRotsPerSec,
+                inputs.rollerVelocityRotsPerSec,
                 VelocityToleranceRotsPerSec
         )) {
             currentGoal = desiredGoal;
@@ -109,36 +105,14 @@ public class Shooter extends SubsystemBase {
         return desiredGoal == currentGoal;
     }
 
-    private void setVelocityImpl(final double velocityRotsPerSec) {
-        velocitySetpointRotsPerSec = velocityRotsPerSec;
-        shooterIO.toShooterVelocity(velocitySetpointRotsPerSec);
-    }
-
-    private void setGoalImpl(final Goal goal) {
-        desiredGoal = InternalGoal.fromGoal(goal);
-        setVelocityImpl(goal.velocityRotsPerSec);
-    }
-
     public Command toGoal(final Goal goal) {
         return runEnd(
-                () -> setGoalImpl(goal),
-                () -> setGoalImpl(Goal.IDLE)
-        );
-    }
-
-    public Command runGoal(final Goal goal) {
-        return run(
-                () -> setGoalImpl(goal)
-        );
-    }
-
-    public Command toVelocity(final DoubleSupplier velocityRotsPerSecSupplier) {
-        return runEnd(
                 () -> {
-                    desiredGoal = InternalGoal.DYNAMIC;
-                    setVelocityImpl(velocityRotsPerSecSupplier.getAsDouble());
+                    desiredGoal = InternalGoal.fromGoal(goal);
+                    velocitySetpointRotsPerSec = goal.velocityRotsPerSec;
+                    feederIO.toFeederVelocity(velocitySetpointRotsPerSec);
                 },
-                () -> setGoalImpl(Goal.IDLE)
+                () -> desiredGoal = InternalGoal.IDLE
         );
     }
 }

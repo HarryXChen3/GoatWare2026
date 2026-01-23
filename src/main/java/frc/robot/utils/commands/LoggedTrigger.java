@@ -4,7 +4,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.utils.logging.LoggedCommandScheduler;
+import frc.robot.utils.logging.CommandLogger;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -190,7 +190,7 @@ public class LoggedTrigger implements BooleanSupplier {
                                 previous,
                                 current,
                                 command -> {
-                                    LoggedCommandScheduler.scheduledBy(command, trigger);
+                                    CommandLogger.scheduledBy(command, trigger);
                                     CommandScheduler.getInstance().schedule(command);
                                 },
                                 Command::cancel

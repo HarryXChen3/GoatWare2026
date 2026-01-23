@@ -1,11 +1,11 @@
-package frc.robot.subsystems.superstructure.hood;
+package frc.robot.subsystems.indexers.feeder;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -18,11 +18,11 @@ import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
 
-public class HoodIOReal implements HoodIO {
-    private final HardwareConstants.HoodConstants constants;
+public class FeederIOReal implements FeederIO {
+    private final HardwareConstants.FeederConstants constants;
     private final TalonFX motor;
 
-    private final PositionVoltage positionVoltage;
+    private final VelocityTorqueCurrentFOC velocityTorqueCurrentFOC;
     private final VoltageOut voltageOut;
 
     private final StatusSignal<Angle> motorPosition;
@@ -31,14 +31,14 @@ public class HoodIOReal implements HoodIO {
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    public HoodIOReal(final HardwareConstants.HoodConstants constants) {
+    public FeederIOReal(final HardwareConstants.FeederConstants constants) {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
         final CANBus p6Bus = bus.toPhoenix6CANBus();
         this.motor = new TalonFX(constants.motorId(), p6Bus);
 
-        this.positionVoltage = new PositionVoltage(0);
+        this.velocityTorqueCurrentFOC = new VelocityTorqueCurrentFOC(0);
         this.voltageOut = new VoltageOut(0);
 
         this.motorPosition = motor.getPosition(false);
@@ -58,40 +58,33 @@ public class HoodIOReal implements HoodIO {
     }
 
     @Override
-    public void updateInputs(final HoodIO.HoodIOInputs inputs) {
-        inputs.pivotPositionRots = motorPosition.getValueAsDouble();
-        inputs.pivotVelocityRotsPerSec = motorVelocity.getValueAsDouble();
-        inputs.pivotVoltage = motorVoltage.getValueAsDouble();
-        inputs.pivotTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
-        inputs.pivotTempCelsius = motorDeviceTemp.getValueAsDouble();
+    public void updateInputs(final FeederIOInputs inputs) {
+        inputs.rollerPositionRots = motorPosition.getValueAsDouble();
+        inputs.rollerVelocityRotsPerSec = motorVelocity.getValueAsDouble();
+        inputs.rollerVoltage = motorVoltage.getValueAsDouble();
+        inputs.rollerTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
+        inputs.rollerTempCelsius = motorDeviceTemp.getValueAsDouble();
     }
 
     @Override
     public void config() {
-        final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
-        motorConfiguration.Slot0 = new Slot0Configs()
+        final TalonFXConfiguration feederConfiguration = new TalonFXConfiguration();
+        feederConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
                 .withKV(0)
                 .withKA(0)
-                .withKP(120)
-                .withKD(40);
-        motorConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0;
-        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
-        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
-        motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
-        motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
-        motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
-        motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.upperLimitRots();
-        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.lowerLimitRots();
-        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
+                .withKP(60)
+                .withKD(12);
+        feederConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
+        feederConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
+        feederConfiguration.CurrentLimits.StatorCurrentLimit = 60;
+        feederConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
+        feederConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+        feederConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
+        feederConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        feederConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(feederConfiguration));
 
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
@@ -113,12 +106,12 @@ public class HoodIOReal implements HoodIO {
     }
 
     @Override
-    public void toHoodPosition(final double turretPositionRots) {
-        motor.setControl(positionVoltage.withPosition(turretPositionRots));
+    public void toFeederVelocity(final double feederVelocityRotsPerSec) {
+        motor.setControl(velocityTorqueCurrentFOC.withVelocity(feederVelocityRotsPerSec));
     }
 
     @Override
-    public void toHoodVoltage(final double hoodVolts) {
-        motor.setControl(voltageOut.withOutput(hoodVolts));
+    public void toFeederVoltage(final double feederVolts) {
+        motor.setControl(voltageOut.withOutput(feederVolts));
     }
 }

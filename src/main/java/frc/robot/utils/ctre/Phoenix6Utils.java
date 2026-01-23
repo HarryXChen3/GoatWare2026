@@ -15,7 +15,11 @@ import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.constants.Constants;
 import frc.robot.constants.SimConstants;
 
+import java.util.function.Supplier;
+
 public class Phoenix6Utils {
+    public static final int MaxAttempts = 2;
+
     /**
      * Performs latency compensation on a refreshed {@link StatusSignal}
      * (using {@link BaseStatusSignal#getLatencyCompensatedValue(StatusSignal, StatusSignal)})
@@ -75,12 +79,30 @@ public class Phoenix6Utils {
         }
     }
 
-    public static void reportIfNotOk(final ParentDevice parentDevice, final StatusCode statusCode) {
+    public static StatusCode tryUntilOk(final ParentDevice device, final Supplier<StatusCode> apply) {
+        StatusCode status = StatusCode.OK;
+        for (int i = 0; i < MaxAttempts; i++) {
+            status = apply.get();
+            if (status.isOK()) {
+                return status;
+            } else if (i < MaxAttempts - 1) {
+                DriverStation.reportWarning(String.format(
+                        "Attempt %d on device %d: %s",
+                        i + 2, device.getDeviceID(), status.getName()
+                ), false);
+            }
+        }
+
+        reportIfNotOk(device, status);
+        return status;
+    }
+
+    public static void reportIfNotOk(final ParentDevice device, final StatusCode statusCode) {
         if (!statusCode.isOK()) {
             DriverStation.reportError(
                     String.format(
-                            "Failed on Device %d: %s",
-                            parentDevice.getDeviceID(),
+                            "Failed on device %d: %s",
+                            device.getDeviceID(),
                             statusCode.getName()
                     ),
                     false

@@ -9,7 +9,7 @@ import frc.robot.constants.HardwareConstants;
 import org.littletonrobotics.junction.Logger;
 
 public class Intake extends SubsystemBase {
-    protected static final String LogKey = "Shooter";
+    protected static final String LogKey = "Intake";
     private static final double VelocityToleranceRotsPerSec = 0.5;
 
     public enum Goal {

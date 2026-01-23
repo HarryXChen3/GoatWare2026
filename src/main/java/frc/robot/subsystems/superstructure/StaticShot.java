@@ -11,7 +11,7 @@ public class StaticShot {
             new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), ShotParameters::interpolate);
     static {
         shotMap.put(0d, new ShotParameters(0, 0));
-        shotMap.put(2d, new ShotParameters(2, 2));
+        shotMap.put(2d, new ShotParameters(40, 0.05));
     }
 
     public static ShotParameters getParameters(final Pose2d currentPose, final Pose2d targetPose) {

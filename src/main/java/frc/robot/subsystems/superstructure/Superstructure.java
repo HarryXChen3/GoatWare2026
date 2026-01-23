@@ -1,13 +1,18 @@
 package frc.robot.subsystems.superstructure;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.superstructure.hood.Hood;
 import frc.robot.subsystems.superstructure.shooter.Shooter;
 import frc.robot.subsystems.superstructure.turret.Turret;
 import frc.robot.utils.Container;
+import frc.robot.utils.commands.LoggedTrigger;
 import frc.robot.utils.subsystems.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
@@ -18,9 +23,10 @@ import java.util.function.Supplier;
 
 public class Superstructure extends VirtualSubsystem {
     protected static final String LogKey = "Superstructure";
+    protected static final LoggedTrigger.Group Group = LoggedTrigger.Group.from(LogKey);
 
     public enum Goal {
-        IDLE(Hood.Goal.STOW, Shooter.Goal.IDLE, Turret.Goal.IDLE),
+        STOW(Hood.Goal.STOW, Shooter.Goal.IDLE, Turret.Goal.IDLE),
         CLIMB(Hood.Goal.STOW, Shooter.Goal.OFF, Turret.Goal.CLIMB);
 
         public final Hood.Goal hoodGoal;
@@ -36,10 +42,9 @@ public class Superstructure extends VirtualSubsystem {
 
     private enum InternalGoal {
         NONE,
-        IDLE(Goal.IDLE),
+        STOW(Goal.STOW),
         CLIMB(Goal.CLIMB),
-        TRACK_HUB,
-        TRACK_HANGAR;
+        DYNAMIC;
 
         public static final HashMap<Goal, InternalGoal> GoalToInternal = new HashMap<>();
         static {
@@ -64,17 +69,17 @@ public class Superstructure extends VirtualSubsystem {
         }
     }
 
-    private final Hood hood;
-    private final Shooter shooter;
     private final Turret turret;
+    private final Shooter shooter;
+    private final Hood hood;
 
-    private InternalGoal desiredGoal = InternalGoal.IDLE;
+    private InternalGoal desiredGoal = InternalGoal.STOW;
     private InternalGoal currentGoal = InternalGoal.NONE;
 
-    public Superstructure(final Hood hood, final Shooter shooter, final Turret turret) {
-        this.hood = hood;
-        this.shooter = shooter;
+    public Superstructure(final Turret turret, final Shooter shooter, final Hood hood) {
         this.turret = turret;
+        this.shooter = shooter;
+        this.hood = hood;
     }
 
     @Override
@@ -96,20 +101,73 @@ public class Superstructure extends VirtualSubsystem {
         );
     }
 
+    public Pose3d[] getComponentPoses() {
+        final Pose3d turretPose = new Pose3d(
+                SimConstants.Turret.ORIGIN_OFFSET,
+                new Rotation3d(turret.getPosition())
+        );
+
+        final Pose3d hoodPose = turretPose
+                .plus(new Transform3d(
+                        SimConstants.Hood.TURRET_OFFSET,
+                        new Rotation3d(0, hood.getPosition().getRadians(), 0)
+                ));
+
+        return new Pose3d[] {
+                turretPose,
+                hoodPose
+        };
+    }
+
+    private Command updateDesiredGoal(final Supplier<InternalGoal> goalSupplier) {
+        return Commands.runOnce(() -> desiredGoal = goalSupplier.get());
+    }
+
+    private Command updateDesiredGoal(final InternalGoal goal) {
+        return Commands.runOnce(() -> desiredGoal = goal);
+    }
+
+    private Command toGoalLike(final InternalGoal goal, final Command... commands) {
+        return updateDesiredGoal(goal)
+                .alongWith(commands)
+                .finallyDo(() -> desiredGoal = InternalGoal.STOW);
+    }
+
+    private boolean atGoal(final InternalGoal goal) {
+        return currentGoal == goal;
+    }
+
+    public LoggedTrigger atGoal(final Goal goal) {
+        return Group.t("AtGoal", () -> atGoal(InternalGoal.fromGoal(goal)));
+    }
+
     public boolean atSetpoint() {
-        return desiredGoal == currentGoal;
+        return currentGoal == desiredGoal;
     }
 
     public Command toGoal(final Goal goal) {
-        return Commands.parallel(
-                Commands.runOnce(() -> desiredGoal = InternalGoal.fromGoal(goal)),
+        return toGoalLike(
+                InternalGoal.fromGoal(goal),
                 hood.toGoal(goal.hoodGoal),
                 shooter.toGoal(goal.shooterGoal),
                 turret.toGoal(goal.turretGoal)
         );
     }
 
-    public Command runParameters(
+    public Command runGoal(final Goal goal) {
+        return Commands.parallel(
+                updateDesiredGoal(InternalGoal.fromGoal(goal)),
+                hood.runGoal(goal.hoodGoal),
+                shooter.runGoal(goal.shooterGoal),
+                turret.runGoal(goal.turretGoal)
+        );
+    }
+
+    public Command waitForGoal(final Goal goal) {
+        return runGoal(goal).until(atGoal(goal));
+    }
+
+    public Command toParameters(
             final Supplier<ShotParameters> shotParametersSupplier,
             final DoubleSupplier turretPositionSupplier
     ) {
@@ -124,10 +182,11 @@ public class Superstructure extends VirtualSubsystem {
             return params;
         };
 
-        return Commands.parallel(
-                turret.runPosition(turretPositionSupplier),
-                hood.runPosition(() -> cached.get().hoodPositionRots()),
-                shooter.runVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
+        return toGoalLike(
+                InternalGoal.DYNAMIC,
+                turret.toPosition(turretPositionSupplier),
+                hood.toPosition(() -> cached.get().hoodPositionRots()),
+                shooter.toVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
                 Commands.run(parameters::clear)
         );
     }

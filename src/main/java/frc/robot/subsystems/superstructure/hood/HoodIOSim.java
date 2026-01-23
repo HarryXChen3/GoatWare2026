@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.closeables.ToClose;
 import frc.robot.utils.control.DeltaTime;
+import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
 import frc.robot.utils.sim.motors.TalonFXSim;
 
@@ -54,13 +55,15 @@ public class HoodIOSim implements HoodIO {
         this.motor = new TalonFX(constants.motorId(), p6Bus);
 
         final DCMotor dcMotor = DCMotor.getKrakenX44Foc(1);
-        final SingleJointedArmSim dcMotorSim = new SingleJointedArmSim(
-                LinearSystemId.createSingleJointedArmSystem(dcMotor, 0.01, constants.gearing()),
+        final SingleJointedArmSim armSim = new SingleJointedArmSim(
+                LinearSystemId.createSingleJointedArmSystem(dcMotor,0.04, constants.gearing()),
                 dcMotor,
                 constants.gearing(),
                 Units.inchesToMeters(8),
-                Units.rotationsToRadians(constants.lowerLimitRots()),
-                Units.rotationsToRadians(constants.upperLimitRots()),
+//                Units.rotationsToRadians(constants.lowerLimitRots()),
+                0,
+//                Units.rotationsToRadians(constants.upperLimitRots()),
+                Units.degreesToRadians(90),
                 false,
                 0
         );
@@ -68,10 +71,10 @@ public class HoodIOSim implements HoodIO {
         this.motorSim = new TalonFXSim(
                 motor,
                 constants.gearing(),
-                dcMotorSim::update,
-                dcMotorSim::setInputVoltage,
-                dcMotorSim::getAngleRads,
-                dcMotorSim::getVelocityRadPerSec
+                armSim::update,
+                armSim::setInputVoltage,
+                armSim::getAngleRads,
+                armSim::getVelocityRadPerSec
         );
 
         this.positionVoltage = new PositionVoltage(0);
@@ -121,8 +124,8 @@ public class HoodIOSim implements HoodIO {
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
                 .withKV(0)
                 .withKA(0)
-                .withKP(120)
-                .withKD(40);
+                .withKP(560)
+                .withKD(12);
         motorConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
         motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0;
         motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0;
@@ -134,11 +137,11 @@ public class HoodIOSim implements HoodIO {
         motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
         motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.upperLimitRots();
-        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.lowerLimitRots();
-        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        motor.getConfigurator().apply(motorConfiguration);
+//        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.upperLimitRots();
+//        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+//        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.lowerLimitRots();
+//        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
@@ -164,8 +167,8 @@ public class HoodIOSim implements HoodIO {
     }
 
     @Override
-    public void toHoodPosition(final double turretPositionRots) {
-        motor.setControl(positionVoltage.withPosition(turretPositionRots));
+    public void toHoodPosition(final double hoodPositionRots) {
+        motor.setControl(positionVoltage.withPosition(hoodPositionRots));
     }
 
     @Override

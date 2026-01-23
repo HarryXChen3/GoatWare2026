@@ -116,28 +116,42 @@ public class Turret extends SubsystemBase {
         );
     }
 
+    public Rotation2d getPosition() {
+        return Rotation2d.fromRotations(inputs.motorPositionRots);
+    }
+
     public boolean atSetpoint() {
         return desiredGoal == currentGoal;
     }
 
+    private void setPositionImpl(final double positionRots) {
+        positionSetpointRots = positionRots;
+        turretIO.toTurretPosition(positionSetpointRots);
+    }
+
+    private void setGoalImpl(final Goal goal) {
+        desiredGoal = InternalGoal.fromGoal(goal);
+        setPositionImpl(goal.positionRots);
+    }
+
     public Command toGoal(final Goal goal) {
         return runEnd(
-                () -> {
-                    desiredGoal = InternalGoal.fromGoal(goal);
-                    positionSetpointRots = goal.positionRots;
-                    turretIO.toTurretPosition(positionSetpointRots);
-                },
-                () -> desiredGoal = InternalGoal.IDLE
+                () -> setGoalImpl(goal),
+                () -> setGoalImpl(Goal.IDLE)
         );
     }
 
-    public Command runPosition(final DoubleSupplier positionRotsSupplier) {
-        return run(
+    public Command runGoal(final Goal goal) {
+        return run(() -> setGoalImpl(goal));
+    }
+
+    public Command toPosition(final DoubleSupplier positionRotsSupplier) {
+        return runEnd(
                 () -> {
                     desiredGoal = InternalGoal.TRACKING;
-                    positionSetpointRots = positionRotsSupplier.getAsDouble();
-                    turretIO.trackTurretPosition(positionSetpointRots);
-                }
+                    setPositionImpl(positionRotsSupplier.getAsDouble());
+                },
+                () -> setGoalImpl(Goal.IDLE)
         );
     }
 }

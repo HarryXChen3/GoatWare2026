@@ -2,7 +2,6 @@ package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.hal.AllianceStationID;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.event.EventLoop;
@@ -20,7 +19,9 @@ import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.RobotMap;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
-import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexers.Indexer;
+import frc.robot.subsystems.indexers.feeder.Feeder;
+import frc.robot.subsystems.indexers.hopper.Hopper;
 import frc.robot.subsystems.intake.rollers.Intake;
 import frc.robot.subsystems.intake.slide.IntakeSlide;
 import frc.robot.subsystems.superstructure.Superstructure;
@@ -32,7 +33,7 @@ import frc.robot.utils.closeables.ToClose;
 import frc.robot.utils.commands.LoggedTrigger;
 import frc.robot.utils.commands.RobotModeLoggedTriggers;
 import frc.robot.utils.ctre.RefreshAll;
-import frc.robot.utils.logging.LoggedCommandScheduler;
+import frc.robot.utils.logging.CommandLogger;
 import frc.robot.utils.subsystems.VirtualSubsystem;
 import frc.robot.utils.teleop.ControllerUtils;
 import frc.robot.utils.teleop.SwerveSpeed;
@@ -83,33 +84,31 @@ public class Robot extends LoggedRobot {
             swerve
     );
 
-    public final Hood hood = new Hood(
-            Constants.CURRENT_MODE,
-            HardwareConstants.HOOD_CONSTANTS
-    );
-
-    public final Shooter shooter = new Shooter(
-            Constants.CURRENT_MODE,
-            HardwareConstants.SHOOTER_CONSTANTS
-    );
-
     public final Turret turret = new Turret(
             Constants.CURRENT_MODE,
             HardwareConstants.TURRET_CONSTANTS
     );
-
+    public final Shooter shooter = new Shooter(
+            Constants.CURRENT_MODE,
+            HardwareConstants.SHOOTER_CONSTANTS
+    );
+    public final Hood hood = new Hood(
+            Constants.CURRENT_MODE,
+            HardwareConstants.HOOD_CONSTANTS
+    );
     public final Superstructure superstructure = new Superstructure(
-            hood, shooter, turret
+            turret, shooter, hood
     );
 
-    public final Indexer indexer = new Indexer();
+    public final Hopper hopper = new Hopper();
+    public final Feeder feeder = new Feeder(Constants.CURRENT_MODE, HardwareConstants.FEEDER_CONSTANTS);
+    public final Indexer indexer = new Indexer(hopper, feeder);
 
+    public final IntakeSlide intakeSlide = new IntakeSlide();
     public final Intake intake = new Intake(
             Constants.CURRENT_MODE,
             HardwareConstants.INTAKE_CONSTANTS
     );
-
-    public final IntakeSlide intakeSlide = new IntakeSlide();
 
     public final ShootCommands shootCommands = new ShootCommands(
             swerve, indexer, superstructure
@@ -233,7 +232,7 @@ public class Robot extends LoggedRobot {
         configureAutos();
         configureButtonBindings(teleopEventLoop);
 
-        LoggedCommandScheduler.init(CommandScheduler.getInstance());
+        CommandLogger.init(CommandScheduler.getInstance());
 
         SignalLogger.enableAutoLogging(true);
         SignalLogger.start();
@@ -242,15 +241,6 @@ public class Robot extends LoggedRobot {
         Logger.start();
 
         Logger.recordOutput("EmptyPose", Pose3d.kZero);
-
-        final Pose3d[] components = new Pose3d[] {
-                Pose3d.kZero,
-                Pose3d.kZero,
-                Pose3d.kZero,
-                Pose3d.kZero,
-                Pose3d.kZero
-        };
-        Logger.recordOutput("ComponentPoses", components);
     }
 
     @Override
@@ -259,14 +249,21 @@ public class Robot extends LoggedRobot {
         RefreshAll.refreshAll();
 
         CommandScheduler.getInstance().run();
+        CommandLogger.periodic();
+
         VirtualSubsystem.run();
 
         driverControllerDisconnected.set(!driverController.getHID().isConnected());
         coControllerDisconnected.set(!coController.getHID().isConnected());
 
-        LoggedCommandScheduler.periodic();
-
-        Logger.recordOutput("Timestamp", Timer.getTimestamp());
+        final Pose3d[] superstructurePoses = superstructure.getComponentPoses();
+        Logger.recordOutput("ZeroedComponents", Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero);
+        Logger.recordOutput("Components",
+                superstructurePoses[0],
+                Pose3d.kZero,
+                Pose3d.kZero,
+                superstructurePoses[1]
+        );
 
 //        Threads.setCurrentThreadPriority(false, 10);
     }

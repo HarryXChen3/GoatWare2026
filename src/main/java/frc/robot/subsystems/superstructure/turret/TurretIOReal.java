@@ -117,17 +117,19 @@ public class TurretIOReal implements TurretIO {
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.reverseLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        motor.getConfigurator().apply(motorConfiguration);
+        Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 
         final CANcoderConfiguration primaryCANcoderConfiguration = new CANcoderConfiguration();
         primaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
         primaryCANcoderConfiguration.MagnetSensor.MagnetOffset = constants.primaryCANcoderOffsetRots();
-        primaryCANcoder.getConfigurator().apply(primaryCANcoderConfiguration);
+        Phoenix6Utils.tryUntilOk(primaryCANcoder,
+                () -> primaryCANcoder.getConfigurator().apply(primaryCANcoderConfiguration));
 
         final CANcoderConfiguration secondaryCANcoderConfiguration = new CANcoderConfiguration();
         secondaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         secondaryCANcoderConfiguration.MagnetSensor.MagnetOffset = constants.secondaryCANcoderOffsetRots();
-        secondaryCANcoder.getConfigurator().apply(secondaryCANcoderConfiguration);
+        Phoenix6Utils.tryUntilOk(secondaryCANcoder,
+                () -> secondaryCANcoder.getConfigurator().apply(secondaryCANcoderConfiguration));
 
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,

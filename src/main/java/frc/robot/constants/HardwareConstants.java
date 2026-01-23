@@ -78,8 +78,8 @@ public class HardwareConstants {
             16,
             0.0,
             0.0,
-            2.0,
-            0.0,
+            1.0,
+            -1.0,
             10,
             125,
             31,
@@ -98,7 +98,7 @@ public class HardwareConstants {
     public static final HoodConstants HOOD_CONSTANTS = new HoodConstants(
             CANBus.RIO,
             17,
-            (16.0 / 56.0) * (14.0 / 42.0) * (14.0 / 510.0),
+            (56.0 / 16.0) * (42.0 / 14.0) * (510.0 / 14.0),
             0.1,
             0
     );
@@ -139,6 +139,17 @@ public class HardwareConstants {
             CANBus.CANIVORE,
             21,
             80
+    );
 
+    public record FeederConstants(
+            CANBus CANBus,
+            int motorId,
+            double gearing
+    ) {}
+
+    public static final FeederConstants FEEDER_CONSTANTS = new FeederConstants(
+            CANBus.CANIVORE,
+            22,
+            3
     );
 }

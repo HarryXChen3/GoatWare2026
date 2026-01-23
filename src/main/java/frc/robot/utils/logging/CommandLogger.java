@@ -9,7 +9,7 @@ import org.littletonrobotics.junction.Logger;
 import java.util.*;
 
 
-public class LoggedCommandScheduler {
+public class CommandLogger {
     private static final String LogKey = "Commands";
     private static final String AlertType = "Alerts";
 
@@ -22,7 +22,7 @@ public class LoggedCommandScheduler {
     private static final String PadFirstTrigger = " ".repeat(4);
     private static final String PadRest = " ".repeat(8);
 
-    private LoggedCommandScheduler() {
+    private CommandLogger() {
     }
 
     private static void commandStarted(final Command command) {
@@ -46,8 +46,8 @@ public class LoggedCommandScheduler {
     }
 
     public static void init(final CommandScheduler commandScheduler) {
-        commandScheduler.onCommandInitialize(LoggedCommandScheduler::commandStarted);
-        commandScheduler.onCommandFinish(LoggedCommandScheduler::commandEnded);
+        commandScheduler.onCommandInitialize(CommandLogger::commandStarted);
+        commandScheduler.onCommandFinish(CommandLogger::commandEnded);
 
         commandScheduler.onCommandInterrupt((interrupted, interrupting) -> {
             interrupting.ifPresent(interrupter -> RunningInterrupters.put(interrupter, interrupted));
@@ -62,7 +62,7 @@ public class LoggedCommandScheduler {
     private static void logRunningCommands() {
         Logger.recordOutput(LogKey + "/Running/.type", AlertType);
 
-        final Set<Command> runningNonInterrupters = LoggedCommandScheduler.RunningNonInterrupters;
+        final Set<Command> runningNonInterrupters = CommandLogger.RunningNonInterrupters;
         final String[] running = new String[runningNonInterrupters.size()];
         {
             int i = 0;
@@ -76,7 +76,7 @@ public class LoggedCommandScheduler {
             }
         }
 
-        final Map<Command, Command> runningInterrupters = LoggedCommandScheduler.RunningInterrupters;
+        final Map<Command, Command> runningInterrupters = CommandLogger.RunningInterrupters;
         final String[] interrupters = new String[runningInterrupters.size()];
         {
             int i = 0;
@@ -142,7 +142,7 @@ public class LoggedCommandScheduler {
     private static void logRequiredSubsystems() {
         Logger.recordOutput(LogKey + "/Subsystems/.type", AlertType);
 
-        final Map<Subsystem, Command> requiredSubsystems = LoggedCommandScheduler.RequiredSubsystems;
+        final Map<Subsystem, Command> requiredSubsystems = CommandLogger.RequiredSubsystems;
         final String[] subsystems = new String[requiredSubsystems.size()];
         {
             int i = 0;

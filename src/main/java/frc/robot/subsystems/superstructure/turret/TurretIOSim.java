@@ -72,7 +72,7 @@ public class TurretIOSim implements TurretIO {
         final DCMotorSim dcMotorSim = new DCMotorSim(
                 LinearSystemId.createDCMotorSystem(
                         dcMotor,
-                        0.05,
+                        0.0977,
                         motorToTurretGearing
                 ),
                 dcMotor
@@ -165,7 +165,7 @@ public class TurretIOSim implements TurretIO {
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.reverseLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        motor.getConfigurator().apply(motorConfiguration);
+        Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 
         final CANcoderConfiguration primaryCANcoderConfiguration = new CANcoderConfiguration();
         primaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
