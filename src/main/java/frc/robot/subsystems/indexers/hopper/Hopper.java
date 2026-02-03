@@ -65,10 +65,6 @@ public class Hopper extends SubsystemBase {
         );
     }
 
-    public Rotation2d getSimulatedComponentPosition() {
-        return Rotation2d.fromRotations(-inputs.hopperPositionRots);
-    }
-
     private void setVoltageImpl(final double volts) {
         controlMode = ControlMode.Voltage;
         setpointOutput = volts;

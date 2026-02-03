@@ -20,13 +20,6 @@ public class Indexer {
         this.feeder = feeder;
     }
 
-    public Pose3d[] getComponentPoses() {
-        return new Pose3d[] {
-                new Pose3d(SimConstants.Hopper.OCTOPUS_ORIGIN_OFFSET,
-                        new Rotation3d(hopper.getSimulatedComponentPosition()))
-        };
-    }
-
     public Command toFeed() {
         return Commands.parallel(
                 hopper.toGoal(Hopper.Goal.FEED),

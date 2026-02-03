@@ -313,14 +313,23 @@ public class Robot extends LoggedRobot {
     public void logComponentPoses() {
         final Pose3d[] superstructurePoses = superstructure.getComponentPoses();
         final Pose3d[] intakeSlidePoses = intakeSlide.getComponentPoses();
-        final Pose3d[] indexerPoses = indexer.getComponentPoses();
-        Logger.recordOutput("ZeroedComponents", Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero);
-        Logger.recordOutput("Components",
+        Logger.recordOutput(
+                "ZeroedComponents",
+                Pose3d.kZero,
+                Pose3d.kZero,
+                Pose3d.kZero,
+                Pose3d.kZero,
+                Pose3d.kZero,
+                Pose3d.kZero
+        );
+        Logger.recordOutput(
+                "Components",
                 superstructurePoses[0],
                 intakeSlidePoses[1],
                 intakeSlidePoses[0],
                 superstructurePoses[1],
-                indexerPoses[0]
+                Pose3d.kZero,
+                Pose3d.kZero
         );
     }
 

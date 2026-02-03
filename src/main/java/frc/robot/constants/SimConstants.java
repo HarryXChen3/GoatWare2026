@@ -22,10 +22,6 @@ public interface SimConstants {
         Translation3d TURRET_OFFSET = new Translation3d(0.121, 0, 0.054);
     }
 
-    interface Hopper {
-        Translation3d OCTOPUS_ORIGIN_OFFSET = new Translation3d(0.122, 0, 0);
-    }
-
     interface IntakeSlide {
         double DrivingGearDiameter = Units.inchesToMeters(1);
         double SlideRotationsToLinearDistanceMetersRatio = 2 * Math.PI * (DrivingGearDiameter / 2);
