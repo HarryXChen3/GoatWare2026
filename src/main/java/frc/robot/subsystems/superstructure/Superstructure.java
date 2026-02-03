@@ -16,6 +16,7 @@ import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Superstructure extends VirtualSubsystem {
@@ -170,7 +171,8 @@ public class Superstructure extends VirtualSubsystem {
 
     public Command runParameters(
             final Supplier<ShotParameters> shotParametersSupplier,
-            final Supplier<Rotation2d> turretPositionSupplier
+            final Supplier<Rotation2d> turretPositionSupplier,
+            final DoubleSupplier turretVelocitySupplier
     ) {
         final Container<ShotParameters> parameters = Container.empty();
         final Supplier<ShotParameters> cached = () -> {
@@ -185,33 +187,9 @@ public class Superstructure extends VirtualSubsystem {
 
         return Commands.parallel(
                 updateDesiredGoal(InternalGoal.DYNAMIC),
-                turret.runPosition(turretPositionSupplier),
+                turret.runPosition(turretPositionSupplier, turretVelocitySupplier),
                 hood.runPosition(() -> cached.get().hoodPositionRots()),
                 shooter.runVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
-                Commands.run(parameters::clear)
-        );
-    }
-
-    public Command toParameters(
-            final Supplier<ShotParameters> shotParametersSupplier,
-            final Supplier<Rotation2d> turretPositionSupplier
-    ) {
-        final Container<ShotParameters> parameters = Container.empty();
-        final Supplier<ShotParameters> cached = () -> {
-            if (parameters.hasValue()) {
-                return parameters.get();
-            }
-
-            final ShotParameters params = shotParametersSupplier.get();
-            parameters.set(params);
-            return params;
-        };
-
-        return toGoalLike(
-                InternalGoal.DYNAMIC,
-                turret.toPosition(turretPositionSupplier),
-                hood.toPosition(() -> cached.get().hoodPositionRots()),
-                shooter.toVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
                 Commands.run(parameters::clear)
         );
     }

@@ -3,7 +3,6 @@ package frc.robot;
 import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
@@ -20,13 +19,13 @@ import frc.robot.auto.Autos;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.RobotMap;
-import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
 import frc.robot.subsystems.indexers.Indexer;
 import frc.robot.subsystems.indexers.feeder.Feeder;
 import frc.robot.subsystems.indexers.hopper.Hopper;
-import frc.robot.subsystems.intake.rollers.Intake;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.rollers.IntakeRollers;
 import frc.robot.subsystems.intake.slide.IntakeSlide;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.hood.Hood;
@@ -52,6 +51,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 public class Robot extends LoggedRobot {
@@ -108,14 +108,18 @@ public class Robot extends LoggedRobot {
     public final Feeder feeder = new Feeder(Constants.CURRENT_MODE, HardwareConstants.FEEDER_CONSTANTS);
     public final Indexer indexer = new Indexer(hopper, feeder);
 
-    public final IntakeSlide intakeSlide = new IntakeSlide();
-    public final Intake intake = new Intake(
+    public final IntakeSlide intakeSlide = new IntakeSlide(
+            Constants.CURRENT_MODE,
+            HardwareConstants.INTAKE_SLIDE_CONSTANTS
+    );
+    public final IntakeRollers intakeRollers = new IntakeRollers(
             Constants.CURRENT_MODE,
             HardwareConstants.INTAKE_CONSTANTS
     );
+    public final Intake intake = new Intake(intakeSlide, intakeRollers);
 
     public final ShootCommands shootCommands = new ShootCommands(
-            swerve, indexer, superstructure
+            swerve, intake, indexer, superstructure
     );
 
     public final Autos autos = new Autos(
@@ -257,18 +261,10 @@ public class Robot extends LoggedRobot {
 
         VirtualSubsystem.run();
 
+        logComponentPoses();
+
         driverControllerDisconnected.set(!driverController.getHID().isConnected());
         coControllerDisconnected.set(!coController.getHID().isConnected());
-
-        final Pose3d[] superstructurePoses = superstructure.getComponentPoses();
-        Logger.recordOutput("ZeroedComponents", Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero);
-        Logger.recordOutput("Components",
-                superstructurePoses[0],
-                Pose3d.kZero,
-                Pose3d.kZero,
-                superstructurePoses[1],
-                new Pose3d(SimConstants.Hopper.OCTOPUS_ORIGIN_OFFSET, new Rotation3d(0, 0, -5 * Timer.getFPGATimestamp()))
-        );
 
 //        Threads.setCurrentThreadPriority(false, 10);
     }
@@ -289,14 +285,6 @@ public class Robot extends LoggedRobot {
                         driverController::getRightX
                 )
         );
-
-        final CommandScheduler scheduler = CommandScheduler.getInstance();
-        final Subsystem ghost = new Subsystem() {};
-        scheduler.registerSubsystem(ghost);
-
-        final Command trackHubCommand = shootCommands.trackHub();
-        trackHubCommand.addRequirements(ghost);
-        scheduler.setDefaultCommand(ghost, trackHubCommand);
     }
 
     @Override
@@ -309,7 +297,6 @@ public class Robot extends LoggedRobot {
         CommandScheduler.getInstance().cancelAll();
 
         driverController.leftBumper(testEventLoop).onTrue(Commands.runOnce(SignalLogger::stop));
-
         driverController.a(testEventLoop).whileTrue(
                 swerve.wheelRadiusCharacterization()
         );
@@ -323,11 +310,45 @@ public class Robot extends LoggedRobot {
     @Override
     public void simulationPeriodic() {}
 
+    public void logComponentPoses() {
+        final Pose3d[] superstructurePoses = superstructure.getComponentPoses();
+        final Pose3d[] intakeSlidePoses = intakeSlide.getComponentPoses();
+        final Pose3d[] indexerPoses = indexer.getComponentPoses();
+        Logger.recordOutput("ZeroedComponents", Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero, Pose3d.kZero);
+        Logger.recordOutput("Components",
+                superstructurePoses[0],
+                intakeSlidePoses[1],
+                intakeSlidePoses[0],
+                superstructurePoses[1],
+                indexerPoses[0]
+        );
+    }
+
     public void configureStateTriggers() {
+        {
+            final CommandScheduler scheduler = CommandScheduler.getInstance();
+            final Command trackHubCommand = shootCommands.trackHub();
+            final Set<Subsystem> trackHubRequirements = trackHubCommand.getRequirements();
+            teleopEnabled.whileTrue(Commands.run(() -> {
+                if (scheduler.isScheduled(trackHubCommand)) {
+                    return;
+                }
+
+                for (final Subsystem subsystem : trackHubRequirements) {
+                    if (scheduler.requiring(subsystem) != null) {
+                        return;
+                    }
+                }
+
+                scheduler.schedule(trackHubCommand);
+            }).withName("ScheduleTrackHub"));
+        }
+
+        autonomousEnabled.or(teleopEnabled).onTrue(intake.deploy());
+
         endgameTrigger.onTrue(ControllerUtils.rumbleForDurationCommand(
                 driverController.getHID(), GenericHID.RumbleType.kBothRumble, 0.5, 1)
         );
-
         disabled.onTrue(swerve.stopCommand());
     }
 
@@ -354,6 +375,9 @@ public class Robot extends LoggedRobot {
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
                 ).withName("SwerveSpeedSlow"));
 
-        driverController.a().whileTrue(shootCommands.stopAndShoot());
+        driverController.a(teleopEventLoop).whileTrue(shootCommands.stopAndShoot());
+
+        driverController.b(teleopEventLoop).onTrue(intake.deploy());
+        driverController.x(teleopEventLoop).onTrue(intake.stow());
     }
 }

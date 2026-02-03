@@ -13,7 +13,7 @@ public interface ElevatorIO {
         public double motorTempCelsius = 0;
     }
 
-    default void updateInputs(final IntakeSlideIO.IntakeArmIOInputs inputs) {}
+    default void updateInputs(final IntakeSlideIO.IntakeSlideIOInputs inputs) {}
 
     default void config() {}
 

@@ -123,7 +123,7 @@ public class HopperIOSim implements HopperIO {
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
         motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
         motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
-        motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        motorConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 
@@ -145,9 +145,9 @@ public class HopperIOSim implements HopperIO {
                 motor
         );
 
-        final TalonFXSimState masterMotorSimState = motor.getSimState();
-        masterMotorSimState.Orientation = ChassisReference.CounterClockwise_Positive;
-        masterMotorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
+        final TalonFXSimState motorSimState = motor.getSimState();
+        motorSimState.Orientation = ChassisReference.Clockwise_Positive;
+        motorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
     }
 
     @Override

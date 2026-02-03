@@ -82,7 +82,7 @@ public class HopperIOReal implements HopperIO {
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
         motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
         motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
-        motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        motorConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 

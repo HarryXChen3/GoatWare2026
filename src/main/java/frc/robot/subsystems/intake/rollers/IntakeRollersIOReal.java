@@ -18,8 +18,8 @@ import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
 
-public class IntakeIOReal implements IntakeIO {
-    private final HardwareConstants.IntakeConstants constants;
+public class IntakeRollersIOReal implements IntakeRollersIO {
+    private final HardwareConstants.IntakeRollersConstants constants;
     private final TalonFX motor;
 
     private final VelocityTorqueCurrentFOC velocityTorqueCurrentFOC;
@@ -31,7 +31,7 @@ public class IntakeIOReal implements IntakeIO {
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    public IntakeIOReal(final HardwareConstants.IntakeConstants constants) {
+    public IntakeRollersIOReal(final HardwareConstants.IntakeRollersConstants constants) {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
@@ -58,7 +58,7 @@ public class IntakeIOReal implements IntakeIO {
     }
 
     @Override
-    public void updateInputs(final IntakeIO.IntakeIOInputs inputs) {
+    public void updateInputs(final IntakeRollersIOInputs inputs) {
         inputs.rollerPositionRots = motorPosition.getValueAsDouble();
         inputs.rollerVelocityRotsPerSec = motorVelocity.getValueAsDouble();
         inputs.rollerVoltage = motorVoltage.getValueAsDouble();

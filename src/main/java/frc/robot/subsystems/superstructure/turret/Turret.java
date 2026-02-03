@@ -13,12 +13,13 @@ import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Turret extends SubsystemBase {
     protected static final String LogKey = "Turret";
-    private static final double PositionToleranceRots = 0.1;
-    private static final double VelocityToleranceRotsPerSec = 0.05;
+    private static final double PositionToleranceRots = 0.025;
+    private static final double VelocityToleranceRotsPerSec = 0.25;
 
     public enum Goal {
         IDLE(0),
@@ -70,6 +71,7 @@ public class Turret extends SubsystemBase {
     private InternalGoal currentGoal = InternalGoal.NONE;
 
     private double positionSetpointRots;
+    private double velocitySetpointRotsPerSec;
 
     public Turret(final Constants.RobotMode mode, final HardwareConstants.TurretConstants constants) {
         this.constants = constants;
@@ -102,9 +104,15 @@ public class Turret extends SubsystemBase {
         turretIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (MathUtil.isNear(positionSetpointRots, inputs.motorPositionRots, PositionToleranceRots)
-                && MathUtil.isNear(0, inputs.motorVelocityRotsPerSec, VelocityToleranceRotsPerSec)
-        ) {
+        if (MathUtil.isNear(
+                positionSetpointRots,
+                inputs.motorPositionRots,
+                PositionToleranceRots
+        ) && MathUtil.isNear(
+                velocitySetpointRotsPerSec,
+                inputs.motorVelocityRotsPerSec,
+                VelocityToleranceRotsPerSec
+        )) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -113,6 +121,7 @@ public class Turret extends SubsystemBase {
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
         Logger.recordOutput(LogKey + "/CurrentGoal", currentGoal);
         Logger.recordOutput(LogKey + "/PositionSetpointRots", positionSetpointRots);
+        Logger.recordOutput(LogKey + "/VelocitySetpointRotsPerSec", velocitySetpointRotsPerSec);
 
         Logger.recordOutput(
                 LogKey + "/PeriodicIOPeriodMs",
@@ -132,14 +141,16 @@ public class Turret extends SubsystemBase {
         return desiredGoal == currentGoal;
     }
 
-    private void setPositionImpl(final double positionRots) {
+    private void setPositionImpl(final double positionRots, final double velocityRotsPerSec) {
         positionSetpointRots = positionRots;
-        turretIO.trackTurretPosition(positionSetpointRots);
+        velocitySetpointRotsPerSec = velocityRotsPerSec;
+        turretIO.trackTurretPosition(positionSetpointRots, velocityRotsPerSec);
     }
 
     private void setGoalImpl(final Goal goal) {
         desiredGoal = InternalGoal.fromGoal(goal);
         positionSetpointRots = goal.positionRots;
+        velocitySetpointRotsPerSec = 0;
         turretIO.toTurretPosition(positionSetpointRots);
     }
 
@@ -154,20 +165,26 @@ public class Turret extends SubsystemBase {
         return run(() -> setGoalImpl(goal));
     }
 
-    public Command toPosition(final Supplier<Rotation2d> positionSupplier) {
+    public Command toPosition(
+            final Supplier<Rotation2d> positionSupplier,
+            final DoubleSupplier velocitySupplier
+    ) {
         return runEnd(
                 () -> {
                     desiredGoal = InternalGoal.TRACKING;
-                    setPositionImpl(positionSupplier.get().getRotations());
+                    setPositionImpl(positionSupplier.get().getRotations(), velocitySupplier.getAsDouble());
                 },
                 () -> setGoalImpl(Goal.IDLE)
         );
     }
 
-    public Command runPosition(final Supplier<Rotation2d> positionSupplier) {
+    public Command runPosition(
+            final Supplier<Rotation2d> positionSupplier,
+            final DoubleSupplier velocitySupplier
+    ) {
         return run(() -> {
             desiredGoal = InternalGoal.TRACKING;
-            setPositionImpl(positionSupplier.get().getRotations());
+            setPositionImpl(positionSupplier.get().getRotations(), velocitySupplier.getAsDouble());
         });
     }
 }

@@ -16,7 +16,7 @@ public interface HopperIO {
 
         default void config() {}
 
-        default void toHopperTorqueCurrent(final double hopperVelocityRotsPerSec) {}
+        default void toHopperTorqueCurrent(final double hopperTorqueCurrentAmps) {}
 
         default void toHopperVoltage(final double hopperVolts) {}
 }

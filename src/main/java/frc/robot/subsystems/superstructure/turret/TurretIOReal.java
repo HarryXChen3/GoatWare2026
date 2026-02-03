@@ -98,8 +98,8 @@ public class TurretIOReal implements TurretIO {
                 .withKP(120)
                 .withKD(40);
         motorConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0;
+        motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0.12;
+        motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0.1;
         motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
         motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
         motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
@@ -177,8 +177,10 @@ public class TurretIOReal implements TurretIO {
     }
 
     @Override
-    public void trackTurretPosition(final double turretPositionRots) {
-        motor.setControl(positionVoltage.withPosition(turretPositionRots));
+    public void trackTurretPosition(final double turretPositionRots, final double turretVelocityRotsPerSec) {
+        motor.setControl(positionVoltage
+                .withPosition(turretPositionRots)
+                .withVelocity(turretVelocityRotsPerSec));
     }
 
     @Override

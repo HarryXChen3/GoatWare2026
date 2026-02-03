@@ -76,9 +76,6 @@ public class HoodIOReal implements HoodIO {
                 .withKA(0)
                 .withKP(120)
                 .withKD(40);
-        motorConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0;
         motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
         motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
         motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;

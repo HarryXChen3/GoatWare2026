@@ -30,6 +30,7 @@ import frc.robot.utils.closeables.ToClose;
 import frc.robot.utils.control.DeltaTime;
 import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
+import frc.robot.utils.sim.SimUtils;
 import frc.robot.utils.sim.feedback.SimFeedbackSensor;
 import frc.robot.utils.sim.motors.TalonFXSim;
 
@@ -58,6 +59,8 @@ public class TurretIOSim implements TurretIO {
     private final StatusSignal<Angle> primaryCANcoderPosition;
     private final StatusSignal<Angle> secondaryCANcoderPosition;
 
+    private double lastVelocity;
+
     public TurretIOSim(final HardwareConstants.TurretConstants constants) {
         this.deltaTime = new DeltaTime(true);
         this.constants = constants;
@@ -82,7 +85,7 @@ public class TurretIOSim implements TurretIO {
                 motor,
                 motorToTurretGearing,
                 dcMotorSim::update,
-                dcMotorSim::setInputVoltage,
+                voltage -> dcMotorSim.setInputVoltage(SimUtils.addMotorFriction(voltage, 0.25)),
                 dcMotorSim::getAngularPositionRad,
                 dcMotorSim::getAngularVelocityRadPerSec
         );
@@ -140,11 +143,11 @@ public class TurretIOSim implements TurretIO {
     public void config() {
         final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
         motorConfiguration.Slot0 = new Slot0Configs()
-                .withKS(0)
-                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
-                .withKV(0)
-                .withKA(0)
-                .withKP(160)
+                .withKS(0.25)
+                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign)
+                .withKV(10.152)
+                .withKA(0.017)
+                .withKP(200)
                 .withKD(4);
         motorConfiguration.Slot1 = new Slot1Configs()
                 .withKS(0)
@@ -234,10 +237,12 @@ public class TurretIOSim implements TurretIO {
     }
 
     @Override
-    public void trackTurretPosition(final double turretPositionRots) {
+    public void trackTurretPosition(final double turretPositionRots, final double turretVelocityRotsPerSec) {
         motor.setControl(positionVoltage
                 .withSlot(0)
-                .withPosition(turretPositionRots));
+                .withPosition(turretPositionRots)
+                .withVelocity(turretVelocityRotsPerSec)
+        );
     }
 
     @Override

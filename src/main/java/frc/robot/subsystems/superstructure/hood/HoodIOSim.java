@@ -122,13 +122,11 @@ public class HoodIOSim implements HoodIO {
         motorConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
+                .withKG(0)
                 .withKV(0)
                 .withKA(0)
                 .withKP(560)
-                .withKD(12);
-        motorConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0;
+                .withKD(6);
         motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
         motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
         motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;

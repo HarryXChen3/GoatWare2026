@@ -1,6 +1,9 @@
 package frc.robot.constants;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 
 public interface SimConstants {
     // Assume 2mOhm resistance for voltage drop calculation
@@ -11,23 +14,38 @@ public interface SimConstants {
         double CONFIG_TIMEOUT_SECONDS = 0.2;
     }
 
-    interface Intake {
-
-    }
-
-    interface Hopper {
-        Translation3d OCTOPUS_ORIGIN_OFFSET = new Translation3d(0.122, 0, 0);
-    }
-
-    interface HopperExtension {
-
-    }
-
     interface Turret {
         Translation3d ORIGIN_OFFSET = new Translation3d(-0.127, 0, 0.386);
     }
 
     interface Hood {
         Translation3d TURRET_OFFSET = new Translation3d(0.121, 0, 0.054);
+    }
+
+    interface Hopper {
+        Translation3d OCTOPUS_ORIGIN_OFFSET = new Translation3d(0.122, 0, 0);
+    }
+
+    interface IntakeSlide {
+        double DrivingGearDiameter = Units.inchesToMeters(1);
+        double SlideRotationsToLinearDistanceMetersRatio = 2 * Math.PI * (DrivingGearDiameter / 2);
+
+        Pose3d ExtendedPose = Pose3d.kZero;
+        Pose3d RetractedPose = new Pose3d(
+                Units.inchesToMeters(-10.616),
+                0,
+                Units.inchesToMeters(3.655),
+                Rotation3d.kZero
+        );
+    }
+
+    interface HopperExtension {
+        Pose3d ExtendedPose = new Pose3d(
+                Units.inchesToMeters(12.606),
+                0,
+                0,
+                Rotation3d.kZero
+        );
+        Pose3d RetractedPose = Pose3d.kZero;
     }
 }

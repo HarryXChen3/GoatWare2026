@@ -87,10 +87,10 @@ public class HardwareConstants {
             1.0,
             -1.0,
             10,
-            125,
-            31,
-            37,
-            52.0 / 14.0,
+            80,
+            13,
+            17,
+            36.0 / 12.0,
             new Transform2d(-0.127, 0, Rotation2d.kZero)
     );
 
@@ -105,7 +105,7 @@ public class HardwareConstants {
     public static final HoodConstants HOOD_CONSTANTS = new HoodConstants(
             CANBus.RIO,
             17,
-            (56.0 / 16.0) * (42.0 / 14.0) * (510.0 / 14.0),
+            (40.0 / 12.0) * (15.0 / 20.0) * (180.0 / 10.0),
             0.1,
             0
     );
@@ -124,28 +124,32 @@ public class HardwareConstants {
             2
     );
 
-    public record IntakeConstants(
+    public record IntakeRollersConstants(
             CANBus CANBus,
             int motorId,
             double gearing
     ) {}
 
-    public static final IntakeConstants INTAKE_CONSTANTS = new IntakeConstants(
+    public static final IntakeRollersConstants INTAKE_CONSTANTS = new IntakeRollersConstants(
             CANBus.CANIVORE,
             20,
-            2
+            20.0 / 12.0
     );
 
     public record IntakeSlideConstants(
             CANBus CANBus,
             int motorId,
-            double gearing
+            double gearing,
+            double forwardLimitRots,
+            double reverseLimitRots
     ) {}
 
     public static final IntakeSlideConstants INTAKE_SLIDE_CONSTANTS = new IntakeSlideConstants(
             CANBus.CANIVORE,
             21,
-            80
+            (60.0 / 12.0) * (40.0 / 18.0),
+            3.9,
+            0
     );
 
     public record FeederConstants(
@@ -157,7 +161,7 @@ public class HardwareConstants {
     public static final FeederConstants FEEDER_CONSTANTS = new FeederConstants(
             CANBus.CANIVORE,
             22,
-            3
+            (36.0 / 12.0) * (24.0 / 18.0)
     );
 
     public record HopperConstants(

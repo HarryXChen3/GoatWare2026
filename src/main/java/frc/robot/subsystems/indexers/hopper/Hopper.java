@@ -1,5 +1,6 @@
 package frc.robot.subsystems.indexers.hopper;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -11,20 +12,29 @@ import org.littletonrobotics.junction.Logger;
 public class Hopper extends SubsystemBase {
     protected static final String LogKey = "Hopper";
 
+    public enum ControlMode {
+        Voltage,
+        TorqueCurrent
+    }
+
     public enum Goal {
-        OFF(0),
-        FEED(10);
+        OFF(ControlMode.Voltage, 0),
+        FEED(ControlMode.TorqueCurrent, 20);
 
-        public final double volts;
+        public final ControlMode controlMode;
+        public final double output;
 
-        Goal(final double volts) {
-            this.volts = volts;
+        Goal(final ControlMode controlMode, final double output) {
+            this.controlMode = controlMode;
+            this.output = output;
         }
     }
 
     private final HopperIO hopperIO;
     private final HopperIOInputsAutoLogged inputs;
 
+    private ControlMode controlMode;
+    private double setpointOutput;
     private Goal desiredGoal = Goal.OFF;
 
     public Hopper(final Constants.RobotMode mode, final HardwareConstants.HopperConstants constants) {
@@ -35,7 +45,6 @@ public class Hopper extends SubsystemBase {
         };
 
         this.inputs = new HopperIOInputsAutoLogged();
-
         this.hopperIO.config();
     }
 
@@ -47,6 +56,8 @@ public class Hopper extends SubsystemBase {
         Logger.processInputs(LogKey, inputs);
 
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
+        Logger.recordOutput(LogKey + "/ControlMode", controlMode);
+        Logger.recordOutput(LogKey + "/SetpointOutput", setpointOutput);
 
         Logger.recordOutput(
                 LogKey + "/PeriodicIOPeriodMs",
@@ -54,13 +65,34 @@ public class Hopper extends SubsystemBase {
         );
     }
 
+    public Rotation2d getSimulatedComponentPosition() {
+        return Rotation2d.fromRotations(-inputs.hopperPositionRots);
+    }
+
+    private void setVoltageImpl(final double volts) {
+        controlMode = ControlMode.Voltage;
+        setpointOutput = volts;
+        hopperIO.toHopperVoltage(volts);
+    }
+
+    private void setTorqueCurrentImpl(final double torqueCurrentAmps) {
+        controlMode = ControlMode.TorqueCurrent;
+        setpointOutput = torqueCurrentAmps;
+        hopperIO.toHopperTorqueCurrent(torqueCurrentAmps);
+    }
+
+    private void setGoalImpl(final Goal goal) {
+        desiredGoal = goal;
+        switch (goal.controlMode) {
+            case Voltage -> setVoltageImpl(goal.output);
+            case TorqueCurrent -> setTorqueCurrentImpl(goal.output);
+        }
+    }
+
     public Command toGoal(final Goal goal) {
         return runEnd(
-                () -> {
-                    desiredGoal = goal;
-                    hopperIO.toHopperVoltage(goal.volts);
-                },
-                () -> desiredGoal = Goal.OFF
+                () -> setGoalImpl(goal),
+                () -> setGoalImpl(Goal.OFF)
         );
     }
 }

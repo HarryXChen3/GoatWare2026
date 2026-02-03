@@ -22,7 +22,7 @@ public interface TurretIO {
 
     default void seedTurretPosition(final Rotation2d turretPosition) {}
 
-    default void trackTurretPosition(final double turretPositionRots) {}
+    default void trackTurretPosition(final double turretPositionRots, final double turretVelocityRotsPerSec) {}
 
     default void toTurretPosition(final double turretPositionRots) {}
 

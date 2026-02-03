@@ -28,11 +28,11 @@ import frc.robot.utils.ctre.RefreshAll;
 import frc.robot.utils.sim.SimUtils;
 import frc.robot.utils.sim.motors.TalonFXSim;
 
-public class IntakeIOSim implements IntakeIO {
+public class IntakeRollersIOSim implements IntakeRollersIO {
     private static final double SIM_UPDATE_PERIOD_SEC = 0.005;
 
     private final DeltaTime deltaTime;
-    private final HardwareConstants.IntakeConstants constants;
+    private final HardwareConstants.IntakeRollersConstants constants;
 
     private final TalonFX motor;
     private final TalonFXSim motorSim;
@@ -46,7 +46,7 @@ public class IntakeIOSim implements IntakeIO {
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    public IntakeIOSim(final HardwareConstants.IntakeConstants constants) {
+    public IntakeRollersIOSim(final HardwareConstants.IntakeRollersConstants constants) {
         this.deltaTime = new DeltaTime(true);
         this.constants = constants;
 
@@ -56,7 +56,7 @@ public class IntakeIOSim implements IntakeIO {
 
         final DCMotor dcMotor = DCMotor.getKrakenX60Foc(1);
         final DCMotorSim dcMotorSim = new DCMotorSim(
-                LinearSystemId.createDCMotorSystem(dcMotor, 0.01, constants.gearing()),
+                LinearSystemId.createDCMotorSystem(dcMotor, 0.001, constants.gearing()),
                 dcMotor
         );
         this.motorSim = new TalonFXSim(
@@ -99,7 +99,7 @@ public class IntakeIOSim implements IntakeIO {
     }
 
     @Override
-    public void updateInputs(final IntakeIO.IntakeIOInputs inputs) {
+    public void updateInputs(final IntakeRollersIOInputs inputs) {
         inputs.rollerPositionRots = motorPosition.getValueAsDouble();
         inputs.rollerVelocityRotsPerSec = motorVelocity.getValueAsDouble();
         inputs.rollerVoltage = motorVoltage.getValueAsDouble();
@@ -145,9 +145,9 @@ public class IntakeIOSim implements IntakeIO {
                 motor
         );
 
-        final TalonFXSimState masterMotorSimState = motor.getSimState();
-        masterMotorSimState.Orientation = ChassisReference.CounterClockwise_Positive;
-        masterMotorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
+        final TalonFXSimState motorSimState = motor.getSimState();
+        motorSimState.Orientation = ChassisReference.CounterClockwise_Positive;
+        motorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
     }
 
     @Override
