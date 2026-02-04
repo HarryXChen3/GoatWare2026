@@ -59,8 +59,6 @@ public class TurretIOSim implements TurretIO {
     private final StatusSignal<Angle> primaryCANcoderPosition;
     private final StatusSignal<Angle> secondaryCANcoderPosition;
 
-    private double lastVelocity;
-
     public TurretIOSim(final HardwareConstants.TurretConstants constants) {
         this.deltaTime = new DeltaTime(true);
         this.constants = constants;
@@ -144,14 +142,14 @@ public class TurretIOSim implements TurretIO {
         final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
         motorConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0.25)
-                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign)
-                .withKV(10.152)
-                .withKA(0.017)
-                .withKP(200)
-                .withKD(4);
+                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
+                .withKV(5.248)
+                .withKA(0.0088)
+                .withKP(103.385)
+                .withKD(5.169);
         motorConfiguration.Slot1 = new Slot1Configs()
                 .withKS(0)
-                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
+                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign)
                 .withKV(0)
                 .withKA(0)
                 .withKP(80)
