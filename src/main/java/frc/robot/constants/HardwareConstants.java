@@ -2,6 +2,7 @@ package frc.robot.constants;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.util.Units;
 
 public class HardwareConstants {
     public static final int PowerDistributionHub = 1;
@@ -174,5 +175,23 @@ public class HardwareConstants {
             CANBus.CANIVORE,
             23,
             3
+    );
+
+    public record ClimbConstants(
+            CANBus CANBus,
+            int motorId,
+            double gearing,
+            double pulleyRadiusMeters,
+            double forwardLimitRots,
+            double reverseLimitRots
+    ) {}
+
+    public static final ClimbConstants CLIMB_CONSTANTS = new ClimbConstants(
+            CANBus.CANIVORE,
+            24,
+            48,
+            Units.inchesToMeters(0.5),
+            20,
+            0
     );
 }

@@ -44,4 +44,8 @@ public interface SimConstants {
         );
         Pose3d RetractedPose = Pose3d.kZero;
     }
+
+    interface Climb {
+        double ClimbWeightKgs = Units.lbsToKilograms(125);
+    }
 }
