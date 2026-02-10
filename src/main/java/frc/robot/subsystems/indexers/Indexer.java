@@ -1,11 +1,8 @@
 package frc.robot.subsystems.indexers;
 
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.indexers.feeder.Feeder;
 import frc.robot.subsystems.indexers.hopper.Hopper;
 

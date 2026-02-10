@@ -19,6 +19,7 @@ import frc.robot.auto.Autos;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.RobotMap;
+import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
 import frc.robot.subsystems.indexers.Indexer;
@@ -117,6 +118,8 @@ public class Robot extends LoggedRobot {
             HardwareConstants.INTAKE_CONSTANTS
     );
     public final Intake intake = new Intake(intakeSlide, intakeRollers);
+
+    public final Climb climb = new Climb(Constants.CURRENT_MODE, HardwareConstants.CLIMB_CONSTANTS);
 
     public final ShootCommands shootCommands = new ShootCommands(
             swerve, intake, indexer, superstructure
@@ -313,6 +316,7 @@ public class Robot extends LoggedRobot {
     public void logComponentPoses() {
         final Pose3d[] superstructurePoses = superstructure.getComponentPoses();
         final Pose3d[] intakeSlidePoses = intakeSlide.getComponentPoses();
+        final Pose3d[] climbPoses = climb.getComponentPoses();
         Logger.recordOutput(
                 "ZeroedComponents",
                 Pose3d.kZero,
@@ -328,8 +332,8 @@ public class Robot extends LoggedRobot {
                 intakeSlidePoses[1],
                 intakeSlidePoses[0],
                 superstructurePoses[1],
-                Pose3d.kZero,
-                Pose3d.kZero
+                climbPoses[0],
+                climbPoses[1]
         );
     }
 
@@ -388,5 +392,7 @@ public class Robot extends LoggedRobot {
 
         driverController.b(teleopEventLoop).onTrue(intake.deploy());
         driverController.x(teleopEventLoop).onTrue(intake.stow());
+
+        driverController.a().whileTrue(climb.toGoal(Climb.Goal.READY_CLIMB));
     }
 }

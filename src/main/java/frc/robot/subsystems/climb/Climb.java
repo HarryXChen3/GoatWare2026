@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.SimConstants;
-import frc.robot.subsystems.climb.stinger.ClimbIOInputsAutoLogged;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
@@ -22,7 +21,7 @@ public class Climb extends SubsystemBase {
 
     public enum Goal {
         STOW(0, ClimbDirection.DEPLOY),
-        READY_CLIMB(0, ClimbDirection.DEPLOY),
+        READY_CLIMB(5, ClimbDirection.DEPLOY),
         CLIMB(0, ClimbDirection.CLIMB);
 
         public final double positionRots;
@@ -120,8 +119,32 @@ public class Climb extends SubsystemBase {
     }
 
     public Pose3d[] getComponentPoses() {
-        // TODO: impl
-        return new Pose3d[0];
+        final Pose3d climbExtended = SimConstants.Climb.ExtendedPose;
+        final Pose3d climbRetracted = SimConstants.Climb.RetractedPose;
+
+        final double extensionMeters = inputs.motorPositionRots * SimConstants.Climb.PulleyCircumferenceMeters;
+        final double totalExtensionDistance = climbExtended.getTranslation()
+                .getDistance(climbRetracted.getTranslation());
+
+        final double stage0MaxExtension = SimConstants.Climb.Stage0MaxExtension;
+        final double stage0ExtensionRatio = Math.min(extensionMeters / stage0MaxExtension, 1);
+        final double stage1ExtensionRatio = Math.max(extensionMeters - stage0MaxExtension, 0)
+                / totalExtensionDistance;
+
+        final double stage0MaxExtensionRatio = MathUtil.clamp(
+                stage0MaxExtension / totalExtensionDistance,
+                0, 1
+        );
+        final Pose3d stage0MaxRetractionPose =
+                climbExtended.interpolate(climbRetracted, 1 - stage0MaxExtensionRatio);
+
+        return new Pose3d[] {
+                stage0MaxRetractionPose.interpolate(climbExtended, stage0ExtensionRatio),
+                climbRetracted.interpolate(
+                        climbExtended,
+                        (stage0ExtensionRatio * stage0MaxExtensionRatio) + stage1ExtensionRatio
+                )
+        };
     }
 
     private void setPositionImpl(final double positionRots) {

@@ -94,9 +94,9 @@ public class ClimbIOReal implements ClimbIO {
         motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
         motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.forwardLimitRots();
+        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.upperLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.reverseLimitRots();
+        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.lowerLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 

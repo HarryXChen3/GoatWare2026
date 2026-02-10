@@ -47,5 +47,17 @@ public interface SimConstants {
 
     interface Climb {
         double ClimbWeightKgs = Units.lbsToKilograms(125);
+        double PulleyRadiusMeters = Units.inchesToMeters(0.5);
+        double PulleyCircumferenceMeters = 2 * Math.PI * PulleyRadiusMeters;
+
+        Pose3d ExtendedPose = Pose3d.kZero;
+        Pose3d RetractedPose = new Pose3d(
+                Units.inchesToMeters(6.272),
+                0,
+                Units.inchesToMeters(-13.9),
+                Rotation3d.kZero
+        );
+
+        double Stage0MaxExtension = Units.inchesToMeters(7.652);
     }
 }

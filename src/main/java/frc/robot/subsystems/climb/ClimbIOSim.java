@@ -4,6 +4,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
@@ -18,9 +19,10 @@ import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.SimConstants;
 import frc.robot.utils.closeables.ToClose;
@@ -58,22 +60,26 @@ public class ClimbIOSim implements ClimbIO {
         this.motor = new TalonFX(constants.motorId(), p6Bus);
 
         final DCMotor dcMotor = DCMotor.getKrakenX60Foc(1);
-        final DCMotorSim dcMotorSim = new DCMotorSim(
+        final ElevatorSim elevatorSim = new ElevatorSim(
                 LinearSystemId.createElevatorSystem(
                         dcMotor,
                         SimConstants.Climb.ClimbWeightKgs,
-                        constants.pulleyRadiusMeters(),
+                        SimConstants.Climb.PulleyRadiusMeters,
                         constants.gearing()
                 ),
-                dcMotor
+                dcMotor,
+                constants.lowerLimitRots() * SimConstants.Climb.PulleyCircumferenceMeters,
+                constants.upperLimitRots() * SimConstants.Climb.PulleyCircumferenceMeters,
+                false,
+                0
         );
         this.motorSim = new TalonFXSim(
                 motor,
                 constants.gearing(),
-                dcMotorSim::update,
-                voltage -> dcMotorSim.setInputVoltage(SimUtils.addMotorFriction(voltage, 0.25)),
-                dcMotorSim::getAngularPositionRad,
-                dcMotorSim::getAngularVelocityRadPerSec
+                elevatorSim::update,
+                voltage -> elevatorSim.setInputVoltage(SimUtils.addMotorFriction(voltage, 0.25)),
+                () -> Units.rotationsToRadians(elevatorSim.getPositionMeters() / SimConstants.Climb.PulleyCircumferenceMeters),
+                () -> Units.rotationsToRadians(elevatorSim.getVelocityMetersPerSecond() / SimConstants.Climb.PulleyCircumferenceMeters)
         );
 
         this.positionTorqueCurrentFOC = new PositionTorqueCurrentFOC(0);
@@ -126,24 +132,24 @@ public class ClimbIOSim implements ClimbIO {
                 .withKA(0)
                 .withKP(40)
                 .withKD(4);
-        motorConfiguration.Slot0 = new Slot0Configs()
+        motorConfiguration.Slot1 = new Slot1Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
                 .withKV(0)
                 .withKA(0)
                 .withKP(260)
                 .withKD(12);
-        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 80;
-        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -80;
-        motorConfiguration.CurrentLimits.StatorCurrentLimit = 80;
+        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 120;
+        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -120;
+        motorConfiguration.CurrentLimits.StatorCurrentLimit = 120;
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
         motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
         motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
         motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.forwardLimitRots();
+        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.upperLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.reverseLimitRots();
+        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.lowerLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 
@@ -166,7 +172,7 @@ public class ClimbIOSim implements ClimbIO {
         );
 
         final TalonFXSimState motorSimState = motor.getSimState();
-        motorSimState.Orientation = ChassisReference.Clockwise_Positive;
+        motorSimState.Orientation = ChassisReference.CounterClockwise_Positive;
         motorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
     }
 
