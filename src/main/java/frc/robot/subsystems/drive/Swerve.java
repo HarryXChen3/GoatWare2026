@@ -282,7 +282,7 @@ public class Swerve extends SubsystemBase {
             final SwerveDriveState[] states = inputs.states;
             if (!replayPoseEstimatorReset && states.length != 0) {
                 final SwerveDriveState oldestState = states[0];
-                replayPoseEstimator.resetPosition(oldestState.RawHeading, oldestState.ModulePositions, oldestState.Pose);
+                replayPoseEstimator.resetPosition(oldestState.RawHeading, oldestState.ModulePositions, oldestState.getPose());
                 replayPoseEstimatorReset = true;
             }
 
@@ -304,7 +304,7 @@ public class Swerve extends SubsystemBase {
             double updatePeriodSeconds = 0;
             for (final SwerveDriveState state : inputs.states) {
                 updatePeriodSeconds = odometryPeriodFilter.calculate(state.OdometryPeriod);
-                poseBuffer.addSample(currentTimeToFPGATime(state.Timestamp), state.Pose);
+                poseBuffer.addSample(currentTimeToFPGATime(state.Timestamp), state.getPose());
             }
 
             odometryUpdatePeriodSeconds = updatePeriodSeconds;
@@ -410,7 +410,7 @@ public class Swerve extends SubsystemBase {
         if (isReplay()) {
             return replayPoseEstimator.getEstimatedPosition();
         }
-        return state().Pose;
+        return state().getPose();
     }
 
     public Optional<Pose2d> getPose(final double atTimestamp) {

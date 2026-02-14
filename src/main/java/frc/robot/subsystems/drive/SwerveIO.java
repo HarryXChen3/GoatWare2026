@@ -166,12 +166,6 @@ public interface SwerveIO {
             }
         }
 
-        /**
-         * Call {@link Swerve#getPose()} instead.
-         * Directly accessing this {@link Pose2d} is nondeterministic in replay.
-         */
-        protected Pose2d Pose;
-
         private SwerveDriveState() {}
 
         public SwerveDriveState(final SwerveDrivetrain.SwerveDriveState state) {
@@ -185,6 +179,14 @@ public interface SwerveIO {
             this.OdometryPeriod = state.OdometryPeriod;
             this.SuccessfulDaqs = state.SuccessfulDaqs;
             this.FailedDaqs = state.FailedDaqs;
+        }
+
+        /**
+         * Call {@link Swerve#getPose()} instead.
+         * Directly accessing this {@link Pose2d} is nondeterministic in replay.
+         */
+        protected Pose2d getPose() {
+            return Pose;
         }
     }
 
@@ -264,7 +266,7 @@ public interface SwerveIO {
 
         @Override
         public void pack(final ByteBuffer bb, final SwerveDriveState state) {
-            Pose2d.struct.pack(bb, state.Pose);
+            Pose2d.struct.pack(bb, state.getPose());
             ChassisSpeeds.struct.pack(bb, state.Speeds);
 
             for (int i = 0; i < ModuleCount; i++) {
