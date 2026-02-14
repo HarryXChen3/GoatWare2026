@@ -16,10 +16,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -74,6 +71,7 @@ public class Swerve extends SubsystemBase {
 
     private final SwerveIO swerveIO;
     private final SwerveIOInputsAutoLogged inputs;
+    private final ModuleIOInputsAutoLogged[] moduleInputs;
 
     private final SwerveDriveKinematics kinematics;
     private final SwerveDrivePoseEstimator replayPoseEstimator;
@@ -163,6 +161,10 @@ public class Swerve extends SubsystemBase {
             case REPLAY, DISABLED -> new SwerveIO() {};
         };
         this.inputs = new SwerveIOInputsAutoLogged();
+        this.moduleInputs = new ModuleIOInputsAutoLogged[moduleConfigs.length];
+        for (int i = 0; i < moduleInputs.length; i++) {
+            moduleInputs[i] = new ModuleIOInputsAutoLogged();
+        }
 
         final Translation2d[] moduleOffsets = new Translation2d[moduleConfigs.length];
         for (int i = 0; i < moduleOffsets.length; i++) {
@@ -315,8 +317,11 @@ public class Swerve extends SubsystemBase {
     public void periodic() {
         final double swervePeriodicUpdateStart = Timer.getFPGATimestamp();
 
-        swerveIO.updateInputs(inputs);
+        swerveIO.updateInputs(inputs, moduleInputs);
         Logger.processInputs(LogKey, inputs);
+        for (final ModuleIOInputsAutoLogged moduleInputs : moduleInputs) {
+            Logger.processInputs(LogKey + "/Module" + moduleInputs.index, moduleInputs);
+        }
 
         final double odometryUpdatePeriodSeconds = updateOdometry();
         updateStateValidCallbacks();
@@ -334,6 +339,9 @@ public class Swerve extends SubsystemBase {
 
         final Pose2d robotPose = getPose();
         final ChassisSpeeds robotRelativeSpeeds = getRobotRelativeSpeeds();
+
+//        final Transform2d diff = robotPose.minus(state().Pose);
+//        Logger.recordOutput("Diff", diff);
 
         Logger.recordOutput(
                 LogKey + "/LinearSpeedMetersPerSecond",

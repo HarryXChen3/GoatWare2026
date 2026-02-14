@@ -5,10 +5,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.swerve.SwerveDrivetrain;
-import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
-import com.ctre.phoenix6.swerve.SwerveModuleConstants;
-import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.*;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -30,6 +27,7 @@ public class SwerveIOReal implements SwerveIO {
     private CircularBuffer<SwerveDrivetrain.SwerveDriveState> tmpStateBuffer;
 
     private final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> drivetrain;
+    private final ActuallyUsableModule[] modules;
 
     @SafeVarargs
     public SwerveIOReal(
@@ -47,6 +45,14 @@ public class SwerveIOReal implements SwerveIO {
                 CTRESwerve.UnusedVisionStdDevs,
                 moduleConstants
         );
+
+        final SwerveModule<TalonFX, TalonFX, CANcoder>[] swerveModules = drivetrain.getModules();
+        final ActuallyUsableModule[] modules = new ActuallyUsableModule[swerveModules.length];
+        for (int i = 0; i < modules.length; i++) {
+            modules[i] = ActuallyUsableModule.fromSwerveModule(i, swerveModules[i]);
+        }
+        this.modules = modules;
+
         this.drivetrain.registerTelemetry(state -> {
             try {
                 bufferLock.lock();
@@ -64,7 +70,7 @@ public class SwerveIOReal implements SwerveIO {
     }
 
     @Override
-    public void updateInputs(final SwerveIOInputs inputs) {
+    public void updateInputs(final SwerveIOInputs inputs, final ModuleIOInputs[] moduleIOInputs) {
         final int maxSize;
         final int overflowCount;
         final CircularBuffer<SwerveDrivetrain.SwerveDriveState> freeBuffer = stateBuffer;
@@ -99,6 +105,10 @@ public class SwerveIOReal implements SwerveIO {
         inputs.gyroRotation3d = drivetrain.getRotation3d();
         inputs.fpgaTimeSeconds = Timer.getFPGATimestamp();
         inputs.currentTimeSeconds = Utils.getCurrentTimeSeconds();
+
+        for (int i = 0; i < modules.length; i++) {
+            modules[i].updateInputs(moduleIOInputs[i]);
+        }
     }
 
     @Override

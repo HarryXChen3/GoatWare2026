@@ -1,6 +1,12 @@
 package frc.robot.subsystems.drive;
 
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.ParentDevice;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.hardware.traits.CommonTalon;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
+import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -11,8 +17,14 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
+import frc.robot.constants.HardwareConstants.CANBus;
+import frc.robot.utils.ctre.RefreshAll;
 import org.littletonrobotics.junction.AutoLog;
 
 import java.nio.ByteBuffer;
@@ -35,13 +47,97 @@ public interface SwerveIO {
 //        public double[] fpgaTimestamps = new double[0];
     }
 
-    /**
-     * Updates the set of loggable inputs.
-     * @param inputs Logged class of IOInputs
-     * @see SwerveIOInputs
-     * @see AutoLog
-     */
-    default void updateInputs(final SwerveIOInputs inputs) {}
+    @AutoLog
+    class ModuleIOInputs {
+        public int index = 0;
+
+        public double drivePositionRots = 0;
+        public double driveVelocityRotsPerSec = 0;
+        public double driveTorqueCurrentAmps = 0;
+        public double driveTempCelsius = 0;
+
+        public double turnPositionRots = 0;
+        public double turnVelocityRotsPerSec = 0;
+        public double turnTorqueCurrentAmps = 0;
+        public double turnTempCelsius = 0;
+    }
+
+    class Module<
+            DriveMotorT extends CommonTalon,
+            TurnMotorT extends CommonTalon,
+            EncoderT extends ParentDevice> {
+        public final int index;
+        public final DriveMotorT driveMotor;
+        public final TurnMotorT turnMotor;
+        public final EncoderT encoder;
+
+        private final StatusSignal<Angle> drivePosition;
+        private final StatusSignal<AngularVelocity> driveVelocity;
+        private final StatusSignal<Current> driveTorqueCurrent;
+        private final StatusSignal<Temperature> driveTemperature;
+
+        private final StatusSignal<Angle> turnPosition;
+        private final StatusSignal<AngularVelocity> turnVelocity;
+        private final StatusSignal<Current> turnTorqueCurrent;
+        private final StatusSignal<Temperature> turnTemperature;
+
+        private Module(
+                final int index,
+                final DriveMotorT driveMotor,
+                final TurnMotorT turnMotor,
+                final EncoderT encoder
+        ) {
+            this.index = index;
+            this.driveMotor = driveMotor;
+            this.turnMotor = turnMotor;
+            this.encoder = encoder;
+
+            this.drivePosition = driveMotor.getPosition(false);
+            this.driveVelocity = driveMotor.getVelocity(false);
+            this.driveTorqueCurrent = driveMotor.getTorqueCurrent(false);
+            this.driveTemperature = driveMotor.getDeviceTemp(false);
+
+            this.turnPosition = turnMotor.getPosition(false);
+            this.turnVelocity = turnMotor.getVelocity(false);
+            this.turnTorqueCurrent = turnMotor.getTorqueCurrent(false);
+            this.turnTemperature = turnMotor.getDeviceTemp(false);
+
+            RefreshAll.add(CANBus.fromPhoenix6CANBus(driveMotor.getNetwork()),
+                    drivePosition, driveVelocity, turnTorqueCurrent, driveTemperature);
+            RefreshAll.add(CANBus.fromPhoenix6CANBus(turnMotor.getNetwork()),
+                    turnPosition, turnVelocity, turnTorqueCurrent, turnTemperature);
+        }
+
+        public void updateInputs(final ModuleIOInputs inputs) {
+            inputs.index = index;
+
+            inputs.drivePositionRots = drivePosition.getValueAsDouble();
+            inputs.driveVelocityRotsPerSec = driveVelocity.getValueAsDouble();
+            inputs.driveTorqueCurrentAmps = driveTorqueCurrent.getValueAsDouble();
+            inputs.driveTempCelsius = driveTemperature.getValueAsDouble();
+
+            inputs.turnPositionRots = turnPosition.getValueAsDouble();
+            inputs.turnVelocityRotsPerSec = turnVelocity.getValueAsDouble();
+            inputs.turnTorqueCurrentAmps = turnTorqueCurrent.getValueAsDouble();
+            inputs.turnTempCelsius = turnTemperature.getValueAsDouble();
+        }
+    }
+
+    class ActuallyUsableModule extends Module<TalonFX, TalonFX, CANcoder> {
+        private ActuallyUsableModule(final int index,
+                                     final SwerveModule<TalonFX, TalonFX, CANcoder> module) {
+            super(index, module.getDriveMotor(), module.getSteerMotor(), module.getEncoder());
+        }
+
+        public static ActuallyUsableModule fromSwerveModule(
+                final int index,
+                final SwerveModule<TalonFX, TalonFX, CANcoder> module
+        ) {
+            return new ActuallyUsableModule(index, module);
+        }
+    }
+
+    default void updateInputs(final SwerveIOInputs inputs, final ModuleIOInputs[] moduleIOInputs) {}
 
     default void setControl(final SwerveRequest request) {}
 
