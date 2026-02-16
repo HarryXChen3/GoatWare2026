@@ -22,9 +22,9 @@ import frc.robot.constants.RobotMap;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
-import frc.robot.subsystems.indexers.Indexer;
-import frc.robot.subsystems.indexers.feeder.Feeder;
-import frc.robot.subsystems.indexers.hopper.Hopper;
+import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.feeder.Feeder;
+import frc.robot.subsystems.indexer.hopper.Hopper;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.rollers.IntakeRollers;
 import frc.robot.subsystems.intake.slide.IntakeSlide;
@@ -389,10 +389,5 @@ public class Robot extends LoggedRobot {
                 ).withName("SwerveSpeedSlow"));
 
         driverController.a(teleopEventLoop).whileTrue(shootCommands.stopAndShoot());
-
-        driverController.b(teleopEventLoop).onTrue(intake.deploy());
-        driverController.x(teleopEventLoop).onTrue(intake.stow());
-
-        driverController.a().whileTrue(climb.toGoal(Climb.Goal.READY_CLIMB));
     }
 }

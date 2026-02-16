@@ -1,4 +1,4 @@
-package frc.robot.subsystems.indexers.hopper;
+package frc.robot.subsystems.indexer.hopper;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
@@ -13,29 +13,14 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
-import com.ctre.phoenix6.sim.ChassisReference;
-import com.ctre.phoenix6.sim.TalonFXSimState;
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.*;
-import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.constants.HardwareConstants;
-import frc.robot.utils.closeables.ToClose;
-import frc.robot.utils.control.DeltaTime;
 import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
-import frc.robot.utils.sim.SimUtils;
-import frc.robot.utils.sim.motors.TalonFXSim;
 
-public class HopperIOSim implements HopperIO {
-    private static final double SIM_UPDATE_PERIOD_SEC = 0.005;
-
-    private final DeltaTime deltaTime;
+public class HopperIOReal implements HopperIO {
     private final HardwareConstants.HopperConstants constants;
-
     private final TalonFX motor;
-    private final TalonFXSim motorSim;
 
     private final TorqueCurrentFOC torqueCurrentFOC;
     private final VoltageOut voltageOut;
@@ -46,27 +31,12 @@ public class HopperIOSim implements HopperIO {
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    public HopperIOSim(final HardwareConstants.HopperConstants constants) {
-        this.deltaTime = new DeltaTime(true);
+    public HopperIOReal(final HardwareConstants.HopperConstants constants) {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
         final CANBus p6Bus = bus.toPhoenix6CANBus();
         this.motor = new TalonFX(constants.motorId(), p6Bus);
-
-        final DCMotor dcMotor = DCMotor.getKrakenX60Foc(1);
-        final DCMotorSim dcMotorSim = new DCMotorSim(
-                LinearSystemId.createDCMotorSystem(dcMotor, 0.0052, constants.gearing()),
-                dcMotor
-        );
-        this.motorSim = new TalonFXSim(
-                motor,
-                constants.gearing(),
-                dcMotorSim::update,
-                voltage -> dcMotorSim.setInputVoltage(SimUtils.addMotorFriction(voltage, 0.25)),
-                dcMotorSim::getAngularPositionRad,
-                dcMotorSim::getAngularVelocityRadPerSec
-        );
 
         this.torqueCurrentFOC = new TorqueCurrentFOC(0);
         this.voltageOut = new VoltageOut(0);
@@ -85,17 +55,6 @@ public class HopperIOSim implements HopperIO {
                 motorTorqueCurrent,
                 motorDeviceTemp
         );
-
-        final Notifier simUpdateNotifier = new Notifier(() -> {
-            final double dt = deltaTime.get();
-            motorSim.update(dt);
-        });
-        ToClose.add(simUpdateNotifier);
-        simUpdateNotifier.setName(String.format(
-                "SimUpdate(%d)",
-                motor.getDeviceID()
-        ));
-        simUpdateNotifier.startPeriodic(SIM_UPDATE_PERIOD_SEC);
     }
 
     @Override
@@ -144,10 +103,6 @@ public class HopperIOSim implements HopperIO {
                 4,
                 motor
         );
-
-        final TalonFXSimState motorSimState = motor.getSimState();
-        motorSimState.Orientation = ChassisReference.Clockwise_Positive;
-        motorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
     }
 
     @Override

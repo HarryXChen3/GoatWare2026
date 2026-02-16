@@ -1,11 +1,11 @@
-package frc.robot.subsystems.indexers.feeder;
+package frc.robot.subsystems.indexer.hopper;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -28,16 +28,16 @@ import frc.robot.utils.ctre.RefreshAll;
 import frc.robot.utils.sim.SimUtils;
 import frc.robot.utils.sim.motors.TalonFXSim;
 
-public class FeederIOSim implements FeederIO {
+public class HopperIOSim implements HopperIO {
     private static final double SIM_UPDATE_PERIOD_SEC = 0.005;
 
     private final DeltaTime deltaTime;
-    private final HardwareConstants.FeederConstants constants;
+    private final HardwareConstants.HopperConstants constants;
 
     private final TalonFX motor;
     private final TalonFXSim motorSim;
 
-    private final VelocityTorqueCurrentFOC velocityTorqueCurrentFOC;
+    private final TorqueCurrentFOC torqueCurrentFOC;
     private final VoltageOut voltageOut;
 
     private final StatusSignal<Angle> motorPosition;
@@ -46,7 +46,7 @@ public class FeederIOSim implements FeederIO {
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    public FeederIOSim(final HardwareConstants.FeederConstants constants) {
+    public HopperIOSim(final HardwareConstants.HopperConstants constants) {
         this.deltaTime = new DeltaTime(true);
         this.constants = constants;
 
@@ -56,7 +56,7 @@ public class FeederIOSim implements FeederIO {
 
         final DCMotor dcMotor = DCMotor.getKrakenX60Foc(1);
         final DCMotorSim dcMotorSim = new DCMotorSim(
-                LinearSystemId.createDCMotorSystem(dcMotor, 0.0026, constants.gearing()),
+                LinearSystemId.createDCMotorSystem(dcMotor, 0.0052, constants.gearing()),
                 dcMotor
         );
         this.motorSim = new TalonFXSim(
@@ -68,7 +68,7 @@ public class FeederIOSim implements FeederIO {
                 dcMotorSim::getAngularVelocityRadPerSec
         );
 
-        this.velocityTorqueCurrentFOC = new VelocityTorqueCurrentFOC(0);
+        this.torqueCurrentFOC = new TorqueCurrentFOC(0);
         this.voltageOut = new VoltageOut(0);
 
         this.motorPosition = motor.getPosition(false);
@@ -99,33 +99,33 @@ public class FeederIOSim implements FeederIO {
     }
 
     @Override
-    public void updateInputs(final FeederIOInputs inputs) {
-        inputs.rollerPositionRots = motorPosition.getValueAsDouble();
-        inputs.rollerVelocityRotsPerSec = motorVelocity.getValueAsDouble();
-        inputs.rollerVoltage = motorVoltage.getValueAsDouble();
-        inputs.rollerTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
-        inputs.rollerTempCelsius = motorDeviceTemp.getValueAsDouble();
+    public void updateInputs(final HopperIOInputs inputs) {
+        inputs.hopperPositionRots = motorPosition.getValueAsDouble();
+        inputs.hopperVelocityRotsPerSec = motorVelocity.getValueAsDouble();
+        inputs.hopperVoltage = motorVoltage.getValueAsDouble();
+        inputs.hopperTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
+        inputs.hopperTempCelsius = motorDeviceTemp.getValueAsDouble();
     }
 
     @Override
     public void config() {
-        final TalonFXConfiguration feederConfiguration = new TalonFXConfiguration();
-        feederConfiguration.Slot0 = new Slot0Configs()
+        final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
+        motorConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
                 .withKV(0)
                 .withKA(0)
-                .withKP(60)
-                .withKD(12);
-        feederConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
-        feederConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
-        feederConfiguration.CurrentLimits.StatorCurrentLimit = 60;
-        feederConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
-        feederConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        feederConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
-        feederConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        feederConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(feederConfiguration));
+                .withKP(120)
+                .withKD(40);
+        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
+        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
+        motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
+        motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
+        motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+        motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
+        motorConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
@@ -146,17 +146,17 @@ public class FeederIOSim implements FeederIO {
         );
 
         final TalonFXSimState motorSimState = motor.getSimState();
-        motorSimState.Orientation = ChassisReference.CounterClockwise_Positive;
+        motorSimState.Orientation = ChassisReference.Clockwise_Positive;
         motorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
     }
 
     @Override
-    public void toFeederVelocity(final double feederVelocityRotsPerSec) {
-        motor.setControl(velocityTorqueCurrentFOC.withVelocity(feederVelocityRotsPerSec));
+    public void toHopperTorqueCurrent(final double hopperTorqueCurrentAmps) {
+        motor.setControl(torqueCurrentFOC.withOutput(hopperTorqueCurrentAmps));
     }
 
     @Override
-    public void toFeederVoltage(final double feederVolts) {
-        motor.setControl(voltageOut.withOutput(feederVolts));
+    public void toHopperVoltage(final double hopperVolts) {
+        motor.setControl(voltageOut.withOutput(hopperVolts));
     }
 }

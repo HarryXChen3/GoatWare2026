@@ -102,6 +102,10 @@ public class IntakeRollers extends SubsystemBase {
         );
     }
 
+    public boolean atSetpoint() {
+        return desiredGoal == currentGoal;
+    }
+
     private void setVelocityImpl(final double velocityRotsPerSec) {
         velocitySetpointRotsPerSec = velocityRotsPerSec;
         intakeRollersIO.toIntakeVelocity(velocityRotsPerSec);

@@ -1,10 +1,10 @@
-package frc.robot.subsystems.indexers;
+package frc.robot.subsystems.indexer;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.subsystems.indexers.feeder.Feeder;
-import frc.robot.subsystems.indexers.hopper.Hopper;
+import frc.robot.subsystems.indexer.feeder.Feeder;
+import frc.robot.subsystems.indexer.hopper.Hopper;
 
 public class Indexer {
     private final Hopper hopper;

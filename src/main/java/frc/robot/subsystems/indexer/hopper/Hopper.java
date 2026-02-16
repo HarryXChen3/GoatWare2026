@@ -1,4 +1,4 @@
-package frc.robot.subsystems.indexers.hopper;
+package frc.robot.subsystems.indexer.hopper;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
