@@ -161,7 +161,6 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
                     LinearSystemId.createDCMotorSystem(dcMotor, 0.0058, constants.averageAxisGearing()),
                     dcMotor
             );
-            new CommandXboxController(RobotMap.MainController).x().onTrue(Commands.runOnce(() -> dcMotorSim.setState(0, -5)));
             this.followerSim = new TalonFXSim(
                     followerMotor,
                     constants.averageAxisGearing(),
