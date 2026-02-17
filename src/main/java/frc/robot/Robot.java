@@ -19,6 +19,7 @@ import frc.robot.auto.Autos;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.RobotMap;
+import frc.robot.subsystems.FuelState;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
@@ -121,8 +122,9 @@ public class Robot extends LoggedRobot {
 
     public final Climb climb = new Climb(Constants.CURRENT_MODE, HardwareConstants.CLIMB_CONSTANTS);
 
+    public final FuelState fuelState = new FuelState(Constants.CURRENT_MODE, intake, indexer, superstructure);
     public final ShootCommands shootCommands = new ShootCommands(
-            swerve, intake, indexer, superstructure
+            swerve, intake, indexer, fuelState, superstructure
     );
 
     public final Autos autos = new Autos(
@@ -389,5 +391,6 @@ public class Robot extends LoggedRobot {
                 ).withName("SwerveSpeedSlow"));
 
         driverController.a(teleopEventLoop).whileTrue(shootCommands.stopAndShoot());
+        driverController.b(teleopEventLoop).whileTrue(intake.intake());
     }
 }

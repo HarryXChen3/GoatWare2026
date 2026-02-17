@@ -101,7 +101,7 @@ public class PivotingElevatorSim extends LinearSystemSim<N2, N1, N2> {
      * Creates a simulated elevator mechanism.
      *
      * @param gearbox The type of and number of motors in the elevator gearbox.
-     * @param gearing The gearing of the elevator (numbers greater than 1 represent reductions).
+     * @param gearing The averageAxisGearing of the elevator (numbers greater than 1 represent reductions).
      * @param carriageMassKg The mass of the elevator carriage.
      * @param drumRadiusMeters The radius of the drum that the elevator spool is wrapped around.
      * @param minHeightMeters The min allowable height of the elevator.

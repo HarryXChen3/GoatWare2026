@@ -86,7 +86,6 @@ public class IntakeSlide extends SubsystemBase {
         };
 
         this.inputs = new IntakeSlideIOInputsAutoLogged();
-        this.intakeSlideIO.config();
 
         squishyModeTrigger.onTrue(Commands.runOnce(() -> {
             holdMode = HoldMode.SQUISHY;
@@ -101,8 +100,8 @@ public class IntakeSlide extends SubsystemBase {
         intakeSlideIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (MathUtil.isNear(positionSetpointRots, inputs.slidePositionRots, PositionToleranceRots)
-                && MathUtil.isNear(0, inputs.slideVelocityRotsPerSec, VelocityToleranceRotsPerSec)
+        if (MathUtil.isNear(positionSetpointRots, inputs.masterPositionRots, PositionToleranceRots)
+                && MathUtil.isNear(0, inputs.masterVelocityRotsPerSec, VelocityToleranceRotsPerSec)
         ) {
             currentGoal = desiredGoal;
         } else {
@@ -131,7 +130,7 @@ public class IntakeSlide extends SubsystemBase {
         final Pose3d hopperExtended = SimConstants.HopperExtension.ExtendedPose;
         final Pose3d hopperRetracted = SimConstants.HopperExtension.RetractedPose;
 
-        final double extensionMeters = inputs.slidePositionRots
+        final double extensionMeters = inputs.slideAveragePositionRots
                 * SimConstants.IntakeSlide.SlideRotationsToLinearDistanceMetersRatio;
         final double totalExtensionDistance = slideExtended.getTranslation()
                 .getDistance(slideRetracted.getTranslation());

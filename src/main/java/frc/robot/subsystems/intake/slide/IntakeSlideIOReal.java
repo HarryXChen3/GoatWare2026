@@ -1,144 +1,196 @@
 package frc.robot.subsystems.intake.slide;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
+import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
-import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
+import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
+import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
+import com.ctre.phoenix6.signals.*;
 import edu.wpi.first.units.measure.*;
 import frc.robot.constants.HardwareConstants;
-import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
 
 public class IntakeSlideIOReal implements IntakeSlideIO {
-    private final HardwareConstants.IntakeSlideConstants constants;
-    private final TalonFX motor;
+    private final DifferentialMechanism<TalonFX> differentialMechanism;
 
-    private final MotionMagicExpoTorqueCurrentFOC motionMagicExpoTorqueCurrentFOC;
-    private final PositionTorqueCurrentFOC positionTorqueCurrentFOC;
-    private final TorqueCurrentFOC torqueCurrentFOC;
-    private final VoltageOut voltageOut;
+    private final MotionMagicExpoTorqueCurrentFOC avg_mmExpoTorqueCurrentFOC;
+    private final PositionTorqueCurrentFOC avg_positionTorqueCurrentFOC;
+    private final PositionTorqueCurrentFOC diff_positionTorqueCurrentFOC;
+    private final TorqueCurrentFOC avg_torqueCurrentFOC;
 
-    private final StatusSignal<Angle> motorPosition;
-    private final StatusSignal<AngularVelocity> motorVelocity;
-    private final StatusSignal<Voltage> motorVoltage;
-    private final StatusSignal<Current> motorTorqueCurrent;
-    private final StatusSignal<Temperature> motorDeviceTemp;
+    private final StatusSignal<Angle> averagePosition;
+    private final StatusSignal<Angle> differentialPosition;
+
+    private final StatusSignal<Angle> masterPosition;
+    private final StatusSignal<AngularVelocity> masterVelocity;
+    private final StatusSignal<Voltage> masterVoltage;
+    private final StatusSignal<Current> masterTorqueCurrent;
+    private final StatusSignal<Temperature> masterDeviceTemp;
+
+    private final StatusSignal<Angle> followerPosition;
+    private final StatusSignal<AngularVelocity> followerVelocity;
+    private final StatusSignal<Voltage> followerVoltage;
+    private final StatusSignal<Current> followerTorqueCurrent;
+    private final StatusSignal<Temperature> followerDeviceTemp;
 
     public IntakeSlideIOReal(final HardwareConstants.IntakeSlideConstants constants) {
-        this.constants = constants;
-
         final HardwareConstants.CANBus bus = constants.CANBus();
         final CANBus p6Bus = bus.toPhoenix6CANBus();
-        this.motor = new TalonFX(constants.motorId(), p6Bus);
 
-        this.motionMagicExpoTorqueCurrentFOC = new MotionMagicExpoTorqueCurrentFOC(0);
-        this.positionTorqueCurrentFOC = new PositionTorqueCurrentFOC(0);
-        this.torqueCurrentFOC = new TorqueCurrentFOC(0);
-        this.voltageOut = new VoltageOut(0);
+        this.avg_mmExpoTorqueCurrentFOC = new MotionMagicExpoTorqueCurrentFOC(0);
+        this.avg_positionTorqueCurrentFOC = new PositionTorqueCurrentFOC(0);
+        this.diff_positionTorqueCurrentFOC = new PositionTorqueCurrentFOC(0);
+        this.avg_torqueCurrentFOC = new TorqueCurrentFOC(0);
 
-        this.motorPosition = motor.getPosition(false);
-        this.motorVelocity = motor.getVelocity(false);
-        this.motorVoltage = motor.getMotorVoltage(false);
-        this.motorTorqueCurrent = motor.getTorqueCurrent(false);
-        this.motorDeviceTemp = motor.getDeviceTemp(false);
+        final TalonFXConfiguration masterConfiguration = new TalonFXConfiguration();
+        masterConfiguration.Slot0 = new Slot0Configs()
+                .withKS(4)
+                .withKV(0)
+                .withKA(0)
+                .withKP(85)
+                .withKD(6);
+        masterConfiguration.Slot1 = new Slot1Configs()
+                .withKS(0)
+                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
+                .withKA(0)
+                .withKP(15)
+                .withKD(0);
+        masterConfiguration.Slot2 = new Slot2Configs()
+                .withKS(0)
+                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
+                .withKV(0)
+                .withKA(0)
+                .withKP(40)
+                .withKD(0);
+        masterConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
+        masterConfiguration.MotionMagic.MotionMagicExpo_kV = 0.12;
+        masterConfiguration.MotionMagic.MotionMagicExpo_kA = 0.1;
+        masterConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
+        masterConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
+        masterConfiguration.CurrentLimits.StatorCurrentLimit = 60;
+        masterConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
+        masterConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+        masterConfiguration.Feedback.SensorToMechanismRatio = constants.averageAxisGearing();
+        masterConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        masterConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        masterConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.forwardLimitRots();
+        masterConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+        masterConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.reverseLimitRots();
+        masterConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+
+        final TalonFXConfiguration followerConfiguration = new TalonFXConfiguration();
+        followerConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+        followerConfiguration.Feedback.SensorToMechanismRatio = constants.averageAxisGearing();
+
+        final DifferentialMotorConstants<TalonFXConfiguration> differentialConstants =
+                new DifferentialMotorConstants<>();
+        differentialConstants.CANBusName = p6Bus.getName();
+        differentialConstants.LeaderId = constants.masterMotorId();
+        differentialConstants.FollowerId = constants.followerMotorId();
+        differentialConstants.Alignment = MotorAlignmentValue.Opposed;
+        differentialConstants.SensorToDifferentialRatio = constants.differentialAxisGearing();
+        differentialConstants.ClosedLoopRate = 200;
+        differentialConstants.LeaderInitialConfigs = masterConfiguration;
+        differentialConstants.FollowerInitialConfigs = followerConfiguration;
+        differentialConstants.FollowerUsesCommonLeaderConfigs = true;
+
+        this.differentialMechanism = new DifferentialMechanism<>(TalonFX::new, differentialConstants);
+
+        this.averagePosition = differentialMechanism.getAveragePosition(false);
+        this.differentialPosition = differentialMechanism.getDifferentialPosition(false);
+
+        final TalonFX masterMotor = differentialMechanism.getLeader();
+        this.masterPosition = masterMotor.getPosition(false);
+        this.masterVelocity = masterMotor.getVelocity(false);
+        this.masterVoltage = masterMotor.getMotorVoltage(false);
+        this.masterTorqueCurrent = masterMotor.getTorqueCurrent(false);
+        this.masterDeviceTemp = masterMotor.getDeviceTemp(false);
+
+        final TalonFX followerMotor = differentialMechanism.getFollower();
+        this.followerPosition = followerMotor.getPosition(false);
+        this.followerVelocity = followerMotor.getVelocity(false);
+        this.followerVoltage = followerMotor.getMotorVoltage(false);
+        this.followerTorqueCurrent = followerMotor.getTorqueCurrent(false);
+        this.followerDeviceTemp = followerMotor.getDeviceTemp(false);
 
         RefreshAll.add(
                 bus,
-                motorPosition,
-                motorVelocity,
-                motorVoltage,
-                motorTorqueCurrent,
-                motorDeviceTemp
+                averagePosition,
+                differentialPosition,
+                masterPosition,
+                masterVelocity,
+                masterVoltage,
+                masterTorqueCurrent,
+                masterDeviceTemp,
+                followerPosition,
+                followerVelocity,
+                followerVoltage,
+                followerTorqueCurrent,
+                followerDeviceTemp
         );
     }
 
     @Override
     public void updateInputs(final IntakeSlideIOInputs inputs) {
-        inputs.slidePositionRots = motorPosition.getValueAsDouble();
-        inputs.slideVelocityRotsPerSec = motorVelocity.getValueAsDouble();
-        inputs.slideVoltage = motorVoltage.getValueAsDouble();
-        inputs.slideTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
-        inputs.slideTempCelsius = motorDeviceTemp.getValueAsDouble();
-    }
+        differentialMechanism.periodic();
 
-    @Override
-    public void config() {
-        final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
-        motorConfiguration.Slot0 = new Slot0Configs()
-                .withKS(0)
-                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
-                .withKV(0)
-                .withKA(0)
-                .withKP(20)
-                .withKD(0);
-        motorConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0.12;
-        motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0.1;
-        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
-        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
-        motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
-        motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
-        motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
-        motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.forwardLimitRots();
-        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.reverseLimitRots();
-        motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
+        inputs.slideState = differentialMechanism.getMechanismState();
 
-        BaseStatusSignal.setUpdateFrequencyForAll(
-                100,
-                motorPosition,
-                motorVelocity,
-                motorVoltage,
-                motorTorqueCurrent
-        );
+        inputs.slideAveragePositionRots = averagePosition.getValueAsDouble();
+        inputs.slideDifferentialPositionRots = differentialPosition.getValueAsDouble();
 
-        BaseStatusSignal.setUpdateFrequencyForAll(
-                4,
-                motorDeviceTemp
-        );
+        inputs.masterPositionRots = masterPosition.getValueAsDouble();
+        inputs.masterVelocityRotsPerSec = masterVelocity.getValueAsDouble();
+        inputs.masterVoltage = masterVoltage.getValueAsDouble();
+        inputs.masterTorqueCurrentAmps = masterTorqueCurrent.getValueAsDouble();
+        inputs.masterTempCelsius = masterDeviceTemp.getValueAsDouble();
 
-        ParentDevice.optimizeBusUtilizationForAll(
-                4,
-                motor
-        );
+        inputs.followerPositionRots = followerPosition.getValueAsDouble();
+        inputs.followerVelocityRotsPerSec = followerVelocity.getValueAsDouble();
+        inputs.followerVoltage = followerVoltage.getValueAsDouble();
+        inputs.followerTorqueCurrentAmps = followerTorqueCurrent.getValueAsDouble();
+        inputs.followerTempCelsius = followerDeviceTemp.getValueAsDouble();
     }
 
     @Override
     public void toSlidePosition(final double slidePositionRots) {
-        motor.setControl(motionMagicExpoTorqueCurrentFOC
-                .withPosition(slidePositionRots)
-                .withSlot(0));
+        differentialMechanism.setControl(
+                avg_mmExpoTorqueCurrentFOC
+                        .withPosition(slidePositionRots)
+                        .withSlot(0),
+                diff_positionTorqueCurrentFOC
+                        .withPosition(0)
+                        .withSlot(2)
+        );
     }
 
     @Override
     public void holdSlidePosition(final double slidePositionRots) {
-        motor.setControl(positionTorqueCurrentFOC
-                .withPosition(slidePositionRots)
-                .withSlot(1));
+        differentialMechanism.setControl(
+                avg_positionTorqueCurrentFOC
+                        .withPosition(slidePositionRots)
+                        .withSlot(1),
+                diff_positionTorqueCurrentFOC
+                        .withPosition(0)
+                        .withSlot(1)
+        );
     }
 
     @Override
     public void toSlideTorqueCurrent(final double slideTorqueCurrentAmps) {
-        motor.setControl(torqueCurrentFOC.withOutput(slideTorqueCurrentAmps));
-    }
-
-    @Override
-    public void toSlideVoltage(final double slideVolts) {
-        motor.setControl(voltageOut.withOutput(slideVolts));
+        differentialMechanism.setControl(
+                avg_torqueCurrentFOC
+                        .withOutput(slideTorqueCurrentAmps),
+                diff_positionTorqueCurrentFOC
+                        .withPosition(0)
+                        .withSlot(1)
+        );
     }
 }

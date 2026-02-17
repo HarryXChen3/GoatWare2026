@@ -2,23 +2,41 @@ package frc.robot.subsystems.indexer;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.indexer.feeder.Feeder;
 import frc.robot.subsystems.indexer.hopper.Hopper;
+import frc.robot.utils.commands.LoggedTrigger;
 
 public class Indexer {
+    protected static final String LogKey = "Indexer";
+    private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
+
     private final Hopper hopper;
     private final Feeder feeder;
 
-    public final Trigger hasFuel = new Trigger(() -> true);
+    private boolean feeding = false;
+    public final LoggedTrigger isFeeding = group.t("isFeeding", () -> feeding);
+    public final LoggedTrigger isFeederTOFDetected = group.t("isFeederTOFDetected", this::isFeederTOFDetected);
 
     public Indexer(final Hopper hopper, final Feeder feeder) {
         this.hopper = hopper;
         this.feeder = feeder;
     }
 
+    public boolean isFeederTOFDetected() {
+        return feeder.isTOFDetected();
+    }
+
+    public void setFeederTOFDetected(final boolean isDetected) {
+        feeder.setTOFDetected(isDetected);
+    }
+
+    private Command feeding() {
+        return Commands.startEnd(() -> feeding = true, () -> feeding = false);
+    }
+
     public Command toFeed() {
         return Commands.parallel(
+                feeding(),
                 hopper.toGoal(Hopper.Goal.FEED),
                 feeder.toGoal(Feeder.Goal.FEED)
         );

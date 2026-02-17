@@ -145,7 +145,7 @@ public class SwerveConstants {
             CanCoderConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0.5;
         }
 
-        private static final double DriveInertiaKgMSquared = 0.01;
+        private static final double DriveInertiaKgMSquared = 0.035;
         private static final double SteerInertiaKgMSquared = 0.01;
 
         private static final double DriveKsFrictionVolts = 0.2;

@@ -10,6 +10,8 @@ public interface FeederIO {
         public double rollerVoltage = 0;
         public double rollerTorqueCurrentAmps = 0;
         public double rollerTempCelsius = 0;
+
+        public boolean tofDetected = false;
     }
 
     default void updateInputs(final FeederIOInputs inputs) {}
@@ -19,4 +21,6 @@ public interface FeederIO {
     default void toFeederVelocity(final double feederVelocityRotsPerSec) {}
 
     default void toFeederVoltage(final double feederVolts) {}
+
+    default void setTOFDetected(final boolean detected) {}
 }

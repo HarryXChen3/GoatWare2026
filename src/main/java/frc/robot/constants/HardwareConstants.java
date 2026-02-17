@@ -93,7 +93,7 @@ public class HardwareConstants {
     }
 
     public static final TurretConstants TURRET_CONSTANTS = new TurretConstants(
-            CANBus.RIO,
+            CANBus.CANIVORE,
             14,
             15,
             16,
@@ -146,15 +146,17 @@ public class HardwareConstants {
     ) {}
 
     public static final IntakeRollersConstants INTAKE_CONSTANTS = new IntakeRollersConstants(
-            CANBus.CANIVORE,
+            CANBus.RIO,
             20,
             20.0 / 12.0
     );
 
     public record IntakeSlideConstants(
             CANBus CANBus,
-            int motorId,
-            double gearing,
+            int masterMotorId,
+            int followerMotorId,
+            double averageAxisGearing,
+            double differentialAxisGearing,
             double forwardLimitRots,
             double reverseLimitRots
     ) {}
@@ -162,7 +164,9 @@ public class HardwareConstants {
     public static final IntakeSlideConstants INTAKE_SLIDE_CONSTANTS = new IntakeSlideConstants(
             CANBus.CANIVORE,
             21,
+            22,
             (60.0 / 12.0) * (40.0 / 18.0),
+            1,
             3.9,
             0
     );
@@ -170,12 +174,14 @@ public class HardwareConstants {
     public record FeederConstants(
             CANBus CANBus,
             int motorId,
+            int tofId,
             double gearing
     ) {}
 
     public static final FeederConstants FEEDER_CONSTANTS = new FeederConstants(
             CANBus.CANIVORE,
-            22,
+            23,
+            24,
             (36.0 / 12.0) * (24.0 / 18.0)
     );
 
@@ -187,7 +193,7 @@ public class HardwareConstants {
 
     public static final HopperConstants HOPPER_CONSTANTS = new HopperConstants(
             CANBus.CANIVORE,
-            23,
+            25,
             3
     );
 
@@ -201,7 +207,7 @@ public class HardwareConstants {
 
     public static final ClimbConstants CLIMB_CONSTANTS = new ClimbConstants(
             CANBus.CANIVORE,
-            24,
+            26,
             48,
             5.05,
             0

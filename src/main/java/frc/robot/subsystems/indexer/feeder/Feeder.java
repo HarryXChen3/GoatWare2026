@@ -107,6 +107,14 @@ public class Feeder extends SubsystemBase {
         return desiredGoal == currentGoal;
     }
 
+    public boolean isTOFDetected() {
+        return inputs.tofDetected;
+    }
+
+    public void setTOFDetected(final boolean isDetected) {
+        feederIO.setTOFDetected(isDetected);
+    }
+
     public Command toGoal(final Goal goal) {
         return runEnd(
                 () -> {
