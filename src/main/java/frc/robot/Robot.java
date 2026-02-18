@@ -122,7 +122,7 @@ public class Robot extends LoggedRobot {
 
     public final Climb climb = new Climb(Constants.CURRENT_MODE, HardwareConstants.CLIMB_CONSTANTS);
 
-    public final FuelState fuelState = new FuelState(Constants.CURRENT_MODE, intake, indexer, superstructure);
+    public final FuelState fuelState = new FuelState(Constants.CURRENT_MODE, swerve, intake, indexer, superstructure);
     public final ShootCommands shootCommands = new ShootCommands(
             swerve, intake, indexer, fuelState, superstructure
     );
