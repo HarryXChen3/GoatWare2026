@@ -29,6 +29,11 @@ public interface SimConstants {
         );
     }
 
+    interface Shooter {
+        double WheelRadiusMeters = Units.inchesToMeters(2);
+        double WheelCircumferenceMeters = 2 * Math.PI * WheelRadiusMeters;
+    }
+
     interface IntakeSlide {
         double DrivingGearDiameter = Units.inchesToMeters(1);
         double SlideRotationsToLinearDistanceMetersRatio = 2 * Math.PI * (DrivingGearDiameter / 2);

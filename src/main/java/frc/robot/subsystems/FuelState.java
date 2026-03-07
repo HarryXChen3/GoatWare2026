@@ -1,11 +1,20 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.*;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.CircularBuffer;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.constants.Constants;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.Indexer;
@@ -17,7 +26,11 @@ import frc.robot.utils.control.DeltaTime;
 import frc.robot.utils.subsystems.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class FuelState extends VirtualSubsystem {
     protected static final String LogKey = "FuelState";
@@ -31,9 +44,12 @@ public class FuelState extends VirtualSubsystem {
     private final Indexer indexer;
     private final Superstructure superstructure;
 
-    private int simFuelCount = 0;
+    private int simFuelCount = 500;
     private final FuelCache fuelCache;
     private final LoggedTrigger hasSimFuel;
+
+    private int simScoredFuelCount = 0;
+    private double simTimeOfFlight;
 
     public final LoggedTrigger hasFuel;
 
@@ -59,8 +75,22 @@ public class FuelState extends VirtualSubsystem {
         configureStateTriggers();
         switch (mode) {
             case SIM, REPLAY -> {
-                this.fuelCache = new FuelCache(50);
+                this.fuelCache = new FuelCache(50, fuel -> {
+                    final Pose2d hubPose = FieldConstants.getHubPose();
+                    if (isInsideHub(hubPose, fuel)) {
+                        simScoredFuelCount++;
+                        simTimeOfFlight = fuel.getTimeOfFlightSeconds();
+
+                        return true;
+                    }
+
+                    return false;
+                });
                 configureSimTriggers();
+
+                if (simFuelCount > 0) {
+                    indexer.setFeederTOFDetected(true);
+                }
             }
             default -> this.fuelCache = null;
         }
@@ -69,13 +99,16 @@ public class FuelState extends VirtualSubsystem {
     @Override
     public void periodic() {
         Logger.recordOutput(LogKey + "/HasFuel", hasFuel);
-        Logger.recordOutput(LogKey + "/SimFuelCount", simFuelCount);
-        Logger.recordOutput(LogKey + "/HasSimFuel", hasSimFuel);
 
         switch (mode) {
             case SIM, REPLAY -> {
                 fuelCache.periodic(deltaTime.get());
                 Logger.recordOutput(LogKey + "/SimFuelPoses", fuelCache.getPoses());
+
+                Logger.recordOutput(LogKey + "/SimFuelCount", simFuelCount);
+                Logger.recordOutput(LogKey + "/HasSimFuel", hasSimFuel);
+                Logger.recordOutput(LogKey + "/SimScoredFuelCount", simScoredFuelCount);
+                Logger.recordOutput(LogKey + "/SimTimeOfFlight", simTimeOfFlight);
             }
         }
     }
@@ -106,7 +139,9 @@ public class FuelState extends VirtualSubsystem {
                                     ))
                                     .plus(SimConstants.Hood.FuelExitOffset);
 
-                            fuelCache.spawn(hoodPose, 7.5);
+                            fuelCache.spawn(hoodPose, ShooterOmegaToBallVelocity.get(
+                                    superstructure.getShooterVelocityRotsPerSec()
+                            ));
                             simFuelCount = Math.max(simFuelCount - 1, 0);
                         }
                 ));
@@ -152,19 +187,39 @@ public class FuelState extends VirtualSubsystem {
         );
     }
 
+    private static final double HubRadiusMeters = 0.615;
+    private static final double HubHeightMeters = 1.829;
+    private static boolean isInsideHub(
+            final Pose2d hubPose,
+            final FuelCache.Fuel fuel
+    ) {
+        final double z = fuel.getZ();
+        final double lowZ = HubHeightMeters - Units.inchesToMeters(4);
+        return (Math.hypot(hubPose.getX() - fuel.getX(), hubPose.getY() - fuel.getY()) <= HubRadiusMeters)
+                && (z >= lowZ && z <= HubHeightMeters)
+                && (fuel.vz < 0);
+    }
+
     private static class FuelCache {
         private static final Translation3d FAR_AWAY =
                 new Translation3d(-100, -100, -100);
 
         private final Fuel[] fuel;
+        private final Function<Fuel, Boolean> shouldDiscard;
+
         private int index = 0;
 
-        public FuelCache(final int capacity) {
-            fuel = new Fuel[capacity];
-
+        public FuelCache(final int capacity, final Function<Fuel, Boolean> shouldDiscard) {
+            this.fuel = new Fuel[capacity];
             for (int i = 0; i < capacity; i++) {
-                fuel[i] = new Fuel(FAR_AWAY);
+                this.fuel[i] = new Fuel(FAR_AWAY);
             }
+
+            this.shouldDiscard = shouldDiscard;
+        }
+
+        public FuelCache(final int capacity) {
+            this(capacity, null);
         }
 
         public void spawn(final Pose3d pose, final double velocityMetersPerSec) {
@@ -183,6 +238,12 @@ public class FuelState extends VirtualSubsystem {
                 if (cached.getZ() < 0) {
                     cached.discard(FAR_AWAY);
                 }
+
+                if (shouldDiscard != null) {
+                    if (shouldDiscard.apply(cached)) {
+                        cached.discard(FAR_AWAY);
+                    }
+                }
             }
         }
 
@@ -199,37 +260,43 @@ public class FuelState extends VirtualSubsystem {
 
         private static class Fuel {
             private static final Translation3d ForwardAxis = new Translation3d(1, 0, 0);
+            private static final Vector<N3> ForwardAxisVec = ForwardAxis.toVector();
             private static final double GravityMetersPerSecSquared = 9.81;
 
-            private boolean active;
+            private boolean active = false;
+            private double activeStartTime = 0;
 
             private double x;
             private double y;
             private double z;
 
-            private double vx;
-            private double vy;
-            private double vz;
+            private double vx = 0.0;
+            private double vy = 0.0;
+            private double vz = 0.0;
 
             public Fuel(final Translation3d pos) {
                 this.x = pos.getX();
                 this.y = pos.getY();
                 this.z = pos.getZ();
-
-                this.vx = 0;
-                this.vy = 0;
-                this.vz = 0;
             }
 
             public void at(final Pose3d pose, final double velocityMetersPerSec) {
                 active = true;
+                activeStartTime = Timer.getFPGATimestamp();
 
                 x = pose.getX();
                 y = pose.getY();
                 z = pose.getZ();
 
-                final Translation3d velocity = ForwardAxis.rotateBy(pose.getRotation())
+                final Vector<N3> axis = ForwardAxis.rotateBy(pose.getRotation()).toVector();
+                final Pose3d randomized = new Pose3d(
+                        pose.getTranslation(),
+                        new Rotation3d(ForwardAxisVec, randomCone(axis, Units.degreesToRadians(1)))
+                );
+
+                final Translation3d velocity = ForwardAxis.rotateBy(randomized.getRotation())
                         .times(velocityMetersPerSec);
+
                 vx = velocity.getX();
                 vy = velocity.getY();
                 vz = velocity.getZ();
@@ -260,8 +327,8 @@ public class FuelState extends VirtualSubsystem {
                 vz = 0.0;
             }
 
-            public boolean isActive() {
-                return active;
+            public double getTimeOfFlightSeconds() {
+                return Timer.getFPGATimestamp() - activeStartTime;
             }
 
             public double getX() {
@@ -279,6 +346,42 @@ public class FuelState extends VirtualSubsystem {
             public Pose3d getPose() {
                 return new Pose3d(x, y, z, Rotation3d.kZero);
             }
+
+            private static final Vector<N3> ZAxis = VecBuilder.fill(0, 0, 1);
+            public static Vector<N3> randomCone(final Vector<N3> axis, final double angleRads) {
+                final double cos = Math.cos(angleRads);
+                final double z = 1 - (Math.random() * (1 - cos));
+                final double phi = 2 * Math.PI * Math.random();
+                final double r = Math.sqrt(1 - (z * z));
+                final double x = r * Math.cos(phi);
+                final double y = r * Math.sin(phi);
+                final Vector<N3> vec = VecBuilder.fill(x, y, z);
+
+                if (z >= 1) {
+                    return vec;
+                } else if (z <= -1) {
+                    return vec.times(-1);
+                }
+
+                final Vector<N3> dir = Vector.cross(ZAxis, axis);
+                final double rot = Math.acos(axis.dot(ZAxis));
+
+                final Matrix<N3, N1> rVec = new Rotation3d(dir, rot).toMatrix().times(vec);
+                return VecBuilder.fill(rVec.get(0, 0), rVec.get(1, 0), rVec.get(2, 0));
+            }
         }
+    }
+
+    private static final InterpolatingDoubleTreeMap ShooterOmegaToBallVelocity = new InterpolatingDoubleTreeMap();
+    private static double shooterSurfaceVelocity(final double shooterVelocityRotsPerSec) {
+        return shooterVelocityRotsPerSec * SimConstants.Shooter.WheelCircumferenceMeters;
+    }
+    static {
+        ShooterOmegaToBallVelocity.put(0d, 0d);
+        ShooterOmegaToBallVelocity.put(10d, shooterSurfaceVelocity(10d));
+        ShooterOmegaToBallVelocity.put(20d, shooterSurfaceVelocity(20d));
+        ShooterOmegaToBallVelocity.put(30d, shooterSurfaceVelocity(30d));
+        ShooterOmegaToBallVelocity.put(40d, shooterSurfaceVelocity(40d));
+        ShooterOmegaToBallVelocity.put(50d, shooterSurfaceVelocity(50d));
     }
 }

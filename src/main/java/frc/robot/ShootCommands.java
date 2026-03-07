@@ -10,6 +10,7 @@ import frc.robot.subsystems.FuelState;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.superstructure.MovingTOFShot;
 import frc.robot.subsystems.superstructure.StaticShot;
 import frc.robot.subsystems.superstructure.Superstructure;
 
@@ -36,12 +37,8 @@ public class ShootCommands {
         this.superstructure = superstructure;
     }
 
-    private Rotation2d angleToHub(final Pose2d robotPose) {
-        final Pose2d hubPose = FieldConstants.getHubPose();
-        return hubPose.getTranslation()
-                .minus(robotPose.plus(superstructure.getOffsetFromCenter()).getTranslation())
-                .getAngle()
-                .minus(robotPose.getRotation());
+    public Pose2d turretPose(final Pose2d robotPose) {
+        return robotPose.plus(superstructure.getOffsetFromCenter());
     }
 
     public Command intake() {
@@ -52,9 +49,12 @@ public class ShootCommands {
 
     public Command trackHub() {
         return superstructure.runParameters(
-                StaticShot.parametersSupplier(swerve::getPose, FieldConstants::getHubPose),
-                () -> angleToHub(swerve.getPose()),
-                () -> Units.radiansToRotations(-swerve.getRobotRelativeSpeeds().omegaRadiansPerSecond)
+                StaticShot.parametersSupplier(
+                        swerve::getPose,
+                        this::turretPose,
+                        swerve::getRobotRelativeSpeeds,
+                        FieldConstants::getHubPose
+                )
         ).withName("TrackHub");
     }
 
@@ -62,15 +62,44 @@ public class ShootCommands {
         return deadline(
                 repeatingSequence(
                         waitUntil(superstructure::atSetpoint),
-                        indexer.toFeed()
-                                .onlyWhile(superstructure::atSetpoint)
+                        Commands.parallel(
+                                indexer.toFeed()
+                                        .onlyWhile(superstructure::atSetpoint),
+                                Commands.waitSeconds(2.5)
+                                        .andThen(intake.stow())
+                        )
                 ).onlyWhile(fuelState.hasFuel),
                 superstructure.runParameters(
-                        StaticShot.parametersSupplier(swerve::getPose, FieldConstants::getHubPose),
-                        () -> angleToHub(swerve.getPose()),
-                        () -> Units.radiansToRotations(-swerve.getRobotRelativeSpeeds().omegaRadiansPerSecond)
+                        StaticShot.parametersSupplier(
+                                swerve::getPose,
+                                this::turretPose,
+                                swerve::getRobotRelativeSpeeds,
+                                FieldConstants::getHubPose
+                        )
                 ),
                 swerve.runWheelXCommand()
         ).withName("StopAndShoot");
+    }
+
+    public Command shoot() {
+        return deadline(
+                repeatingSequence(
+//                        waitUntil(superstructure::atSetpoint),
+                        Commands.parallel(
+                                indexer.toFeed(),
+//                                        .onlyWhile(superstructure::atSetpoint),
+                                Commands.waitSeconds(2.5)
+                                        .andThen(intake.stow())
+                        )
+                ).onlyWhile(fuelState.hasFuel),
+                superstructure.runParameters(
+                        MovingTOFShot.parametersSupplier(
+                                swerve::getPose,
+                                this::turretPose,
+                                swerve::getRobotRelativeSpeeds,
+                                FieldConstants::getHubPose
+                        )
+                )
+        ).withName("Shoot");
     }
 }

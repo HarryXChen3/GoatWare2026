@@ -109,6 +109,10 @@ public class Shooter extends SubsystemBase {
         return desiredGoal == currentGoal;
     }
 
+    public double getVelocityRotsPerSec() {
+        return inputs.masterVelocityRotsPerSec;
+    }
+
     private void setVelocityImpl(final double velocityRotsPerSec) {
         velocitySetpointRotsPerSec = velocityRotsPerSec;
         shooterIO.toShooterVelocity(velocitySetpointRotsPerSec);

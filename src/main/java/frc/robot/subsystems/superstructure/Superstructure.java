@@ -121,18 +121,8 @@ public class Superstructure extends VirtualSubsystem {
         };
     }
 
-    private Command updateDesiredGoal(final Supplier<InternalGoal> goalSupplier) {
-        return Commands.runOnce(() -> desiredGoal = goalSupplier.get());
-    }
-
-    private Command updateDesiredGoal(final InternalGoal goal) {
-        return Commands.runOnce(() -> desiredGoal = goal);
-    }
-
-    private Command toGoalLike(final InternalGoal goal, final Command... commands) {
-        return updateDesiredGoal(goal)
-                .alongWith(commands)
-                .finallyDo(() -> desiredGoal = InternalGoal.STOW);
+    public double getShooterVelocityRotsPerSec() {
+        return shooter.getVelocityRotsPerSec();
     }
 
     private boolean atGoal(final InternalGoal goal) {
@@ -145,6 +135,20 @@ public class Superstructure extends VirtualSubsystem {
 
     public boolean atSetpoint() {
         return currentGoal == desiredGoal;
+    }
+
+    private Command updateDesiredGoal(final Supplier<InternalGoal> goalSupplier) {
+        return Commands.runOnce(() -> desiredGoal = goalSupplier.get());
+    }
+
+    private Command updateDesiredGoal(final InternalGoal goal) {
+        return updateDesiredGoal(() -> goal);
+    }
+
+    private Command toGoalLike(final InternalGoal goal, final Command... commands) {
+        return updateDesiredGoal(goal)
+                .alongWith(commands)
+                .finallyDo(() -> desiredGoal = InternalGoal.STOW);
     }
 
     public Command toGoal(final Goal goal) {
@@ -169,11 +173,7 @@ public class Superstructure extends VirtualSubsystem {
         return runGoal(goal).until(atGoal(goal));
     }
 
-    public Command runParameters(
-            final Supplier<ShotParameters> shotParametersSupplier,
-            final Supplier<Rotation2d> turretPositionSupplier,
-            final DoubleSupplier turretVelocitySupplier
-    ) {
+    public Command runParameters(final Supplier<ShotParameters> shotParametersSupplier) {
         final Container<ShotParameters> parameters = Container.empty();
         final Supplier<ShotParameters> cached = () -> {
             if (parameters.hasValue()) {
@@ -187,9 +187,9 @@ public class Superstructure extends VirtualSubsystem {
 
         return Commands.parallel(
                 updateDesiredGoal(InternalGoal.DYNAMIC),
-                turret.runPosition(turretPositionSupplier, turretVelocitySupplier),
-                hood.runPosition(() -> cached.get().hoodPositionRots()),
-                shooter.runVelocity(() -> cached.get().shooterVelocityRotsPerSec()),
+                turret.runPosition(() -> cached.get().turretAngle(), () -> cached.get().turretVelocityRotsPerSec()),
+                hood.runPosition(() -> cached.get().shooter().hoodPositionRots()),
+                shooter.runVelocity(() -> cached.get().shooter().shooterVelocityRotsPerSec()),
                 Commands.run(parameters::clear)
         );
     }

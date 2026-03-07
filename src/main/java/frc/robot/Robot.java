@@ -17,6 +17,7 @@ import frc.robot.auto.AutoChooser;
 import frc.robot.auto.AutoOption;
 import frc.robot.auto.Autos;
 import frc.robot.constants.Constants;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.RobotMap;
 import frc.robot.subsystems.FuelState;
@@ -258,7 +259,6 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void robotPeriodic() {
-//        Threads.setCurrentThreadPriority(true, 99);
         RefreshAll.refreshAll();
 
         CommandScheduler.getInstance().run();
@@ -271,7 +271,12 @@ public class Robot extends LoggedRobot {
         driverControllerDisconnected.set(!driverController.getHID().isConnected());
         coControllerDisconnected.set(!coController.getHID().isConnected());
 
-//        Threads.setCurrentThreadPriority(false, 10);
+        Logger.recordOutput(
+                "DistanceToHub",
+                FieldConstants.getHubPose()
+                        .getTranslation()
+                        .getDistance(shootCommands.turretPose(swerve.getPose()).getTranslation())
+        );
     }
 
     @Override
@@ -390,7 +395,7 @@ public class Robot extends LoggedRobot {
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
                 ).withName("SwerveSpeedSlow"));
 
-        driverController.a(teleopEventLoop).whileTrue(shootCommands.stopAndShoot());
+        driverController.a(teleopEventLoop).whileTrue(shootCommands.shoot());
         driverController.b(teleopEventLoop).whileTrue(intake.intake());
     }
 }

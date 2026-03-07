@@ -117,6 +117,7 @@ public class Feeder extends SubsystemBase {
 
     public Command toGoal(final Goal goal) {
         return runEnd(
+                // TODO: fixme
                 () -> {
                     desiredGoal = InternalGoal.fromGoal(goal);
                     velocitySetpointRotsPerSec = goal.velocityRotsPerSec;
