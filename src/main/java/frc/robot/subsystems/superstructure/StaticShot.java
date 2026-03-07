@@ -62,7 +62,7 @@ public class StaticShot {
         return () -> {
             final Pose2d robotPose = robotPoseSupplier.get();
             return StaticShot.getParameters(
-                    robotPoseSupplier.get(),
+                    robotPose,
                     toTurretPoseFn.apply(robotPose),
                     robotRelativeSpeedsSupplier.get(),
                     targetPoseSupplier.get()

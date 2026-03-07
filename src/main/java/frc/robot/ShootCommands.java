@@ -62,7 +62,7 @@ public class ShootCommands {
         return deadline(
                 repeatingSequence(
                         waitUntil(superstructure::atSetpoint),
-                        Commands.parallel(
+                        Commands.deadline(
                                 indexer.toFeed()
                                         .onlyWhile(superstructure::atSetpoint),
                                 Commands.waitSeconds(2.5)
@@ -84,10 +84,10 @@ public class ShootCommands {
     public Command shoot() {
         return deadline(
                 repeatingSequence(
-//                        waitUntil(superstructure::atSetpoint),
-                        Commands.parallel(
-                                indexer.toFeed(),
-//                                        .onlyWhile(superstructure::atSetpoint),
+                        waitUntil(superstructure::atSetpoint),
+                        Commands.deadline(
+                                indexer.toFeed()
+                                        .onlyWhile(superstructure::atSetpoint),
                                 Commands.waitSeconds(2.5)
                                         .andThen(intake.stow())
                         )
