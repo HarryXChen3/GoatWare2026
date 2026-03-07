@@ -1,8 +1,6 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.constants.FieldConstants;
@@ -99,6 +97,11 @@ public class ShootCommands {
                                 swerve::getRobotRelativeSpeeds,
                                 FieldConstants::getHubPose
                         )
+//                        () -> new ShotParameters(
+//                                new ShotParameters.Shooter(21, 0.05),
+//                                Rotation2d.kZero,
+//                                0
+//                        )
                 )
         ).withName("Shoot");
     }

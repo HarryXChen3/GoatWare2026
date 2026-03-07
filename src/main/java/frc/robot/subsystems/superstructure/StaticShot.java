@@ -28,9 +28,8 @@ public class StaticShot {
         ShotMap.put(6.0, new ShotParameters.Shooter(27.75, 0.0565));
     }
 
-    public static Rotation2d angleToHub(final Pose2d robotPose, final Pose2d turretPose) {
-        final Pose2d hubPose = FieldConstants.getHubPose();
-        return hubPose.getTranslation()
+    public static Rotation2d angleToTarget(final Pose2d robotPose, final Pose2d turretPose, final Pose2d targetPose) {
+        return targetPose.getTranslation()
                 .minus(turretPose.getTranslation())
                 .getAngle()
                 .minus(robotPose.getRotation());
@@ -48,7 +47,7 @@ public class StaticShot {
                                 .getTranslation()
                                 .getDistance(targetPose.getTranslation())
                 ),
-                angleToHub(robotPose, turretPose),
+                angleToTarget(robotPose, turretPose, targetPose),
                 Units.radiansToRotations(-robotRelativeSpeeds.omegaRadiansPerSecond)
         );
     }
