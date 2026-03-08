@@ -5,8 +5,10 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.indexer.feeder.Feeder;
 import frc.robot.subsystems.indexer.hopper.Hopper;
 import frc.robot.utils.commands.LoggedTrigger;
+import frc.robot.utils.subsystems.VirtualSubsystem;
+import org.littletonrobotics.junction.Logger;
 
-public class Indexer {
+public class Indexer extends VirtualSubsystem {
     protected static final String LogKey = "Indexer";
     private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
 
@@ -22,6 +24,11 @@ public class Indexer {
         this.feeder = feeder;
     }
 
+    @Override
+    public void periodic() {
+        Logger.recordOutput(LogKey + "/Feeding", feeding);
+    }
+
     public boolean isFeederTOFDetected() {
         return feeder.isTOFDetected();
     }
@@ -31,7 +38,7 @@ public class Indexer {
     }
 
     private Command feeding() {
-        return Commands.startEnd(() -> feeding = true, () -> feeding = false);
+        return Commands.runEnd(() -> feeding = true, () -> feeding = false);
     }
 
     public Command toFeed() {

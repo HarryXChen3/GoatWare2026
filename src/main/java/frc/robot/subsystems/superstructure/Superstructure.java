@@ -208,7 +208,7 @@ public class Superstructure extends VirtualSubsystem {
         );
     }
 
-    public Command runParametersWithHoodStow(final Supplier<ShotParameters> shotParametersSupplier) {
+    public Command runParametersHoodStowed(final Supplier<ShotParameters> shotParametersSupplier) {
         return runParametersWithHoodCommand(
                 shotParametersSupplier,
                 cached -> hood.runGoal(Hood.Goal.STOW)

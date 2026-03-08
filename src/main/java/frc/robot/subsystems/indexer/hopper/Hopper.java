@@ -3,6 +3,7 @@ package frc.robot.subsystems.indexer.hopper;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
@@ -85,7 +86,7 @@ public class Hopper extends SubsystemBase {
     }
 
     public Command toGoal(final Goal goal) {
-        return runEnd(
+        return startEnd(
                 () -> setGoalImpl(goal),
                 () -> setGoalImpl(Goal.OFF)
         );

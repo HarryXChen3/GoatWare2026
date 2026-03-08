@@ -115,15 +115,20 @@ public class Feeder extends SubsystemBase {
         feederIO.setTOFDetected(isDetected);
     }
 
+    private void setVelocityImpl(final double velocityRotsPerSec) {
+        velocitySetpointRotsPerSec = velocityRotsPerSec;
+        feederIO.toFeederVelocity(velocityRotsPerSec);
+    }
+
+    private void setGoalImpl(final Goal goal) {
+        desiredGoal = InternalGoal.fromGoal(goal);
+        setVelocityImpl(goal.velocityRotsPerSec);
+    }
+
     public Command toGoal(final Goal goal) {
-        return runEnd(
-                // TODO: fixme
-                () -> {
-                    desiredGoal = InternalGoal.fromGoal(goal);
-                    velocitySetpointRotsPerSec = goal.velocityRotsPerSec;
-                    feederIO.toFeederVelocity(velocitySetpointRotsPerSec);
-                },
-                () -> desiredGoal = InternalGoal.IDLE
+        return startEnd(
+                () -> setGoalImpl(goal),
+                () -> setGoalImpl(Goal.IDLE)
         );
     }
 }

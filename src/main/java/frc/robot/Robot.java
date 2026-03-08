@@ -347,7 +347,7 @@ public class Robot extends LoggedRobot {
     public void configureStateTriggers() {
         {
             final CommandScheduler scheduler = CommandScheduler.getInstance();
-            final Command trackHubCommand = shootCommands.trackHub();
+            final Command trackHubCommand = shootCommands.trackTarget();
             final Set<Subsystem> trackHubRequirements = trackHubCommand.getRequirements();
             teleopEnabled.whileTrue(Commands.run(() -> {
                 if (scheduler.isScheduled(trackHubCommand)) {
@@ -395,9 +395,9 @@ public class Robot extends LoggedRobot {
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
                 ).withName("SwerveSpeedSlow"));
 
-        driverController.rightTrigger(0.5, teleopEventLoop)
+        driverController.a(teleopEventLoop)
                 .whileTrue(shootCommands.shoot())
                 .onFalse(intake.deploy());
-        driverController.leftTrigger(0.5, teleopEventLoop).whileTrue(intake.intake());
+        driverController.b(teleopEventLoop).whileTrue(intake.intake());
     }
 }
