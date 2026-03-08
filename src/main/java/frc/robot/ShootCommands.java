@@ -71,7 +71,7 @@ public class ShootCommands {
                 FieldConstants::getHubPose
         );
 
-        return superstructure.runParameters(
+        return superstructure.runParametersWithHoodStow(
                 () -> {
                     final ChassisSpeeds fieldSpeeds = swerve.getFieldRelativeSpeeds();
                     final double linearSpeedMetersPerSec = Math.hypot(

@@ -16,6 +16,7 @@ import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Superstructure extends VirtualSubsystem {
@@ -176,7 +177,10 @@ public class Superstructure extends VirtualSubsystem {
         return runGoal(goal).until(atGoal(goal));
     }
 
-    public Command runParameters(final Supplier<ShotParameters> shotParametersSupplier) {
+    private Command runParametersWithHoodCommand(
+            final Supplier<ShotParameters> shotParametersSupplier,
+            final Function<Supplier<ShotParameters>, Command> hoodCommand
+    ) {
         final Container<ShotParameters> parameters = Container.empty();
         final Supplier<ShotParameters> cached = () -> {
             if (parameters.hasValue()) {
@@ -191,9 +195,23 @@ public class Superstructure extends VirtualSubsystem {
         return Commands.parallel(
                 updateDesiredGoal(InternalGoal.DYNAMIC_PARAMETERS),
                 turret.runPosition(() -> cached.get().turretAngle(), () -> cached.get().turretVelocityRotsPerSec()),
-                hood.runPosition(() -> cached.get().shooter().hoodPositionRots()),
+                hoodCommand.apply(cached),
                 shooter.runVelocity(() -> cached.get().shooter().shooterVelocityRotsPerSec()),
                 Commands.run(parameters::clear)
+        );
+    }
+
+    public Command runParameters(final Supplier<ShotParameters> shotParametersSupplier) {
+        return runParametersWithHoodCommand(
+                shotParametersSupplier,
+                cached -> hood.runPosition(() -> cached.get().shooter().hoodPositionRots())
+        );
+    }
+
+    public Command runParametersWithHoodStow(final Supplier<ShotParameters> shotParametersSupplier) {
+        return runParametersWithHoodCommand(
+                shotParametersSupplier,
+                cached -> hood.runGoal(Hood.Goal.STOW)
         );
     }
 }
