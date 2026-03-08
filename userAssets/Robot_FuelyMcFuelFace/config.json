@@ -3,11 +3,11 @@
   "sourceUrl": "https://github.com/TechnoTitans/TitanWare2026",
   "disableSimplification": true,
   "rotations": [
-    { "axis": "x", "degrees": 0 },
+    { "axis": "x", "degrees": 90 },
     { "axis": "y", "degrees": 0 },
     { "axis": "z", "degrees": 90 }
   ],
-  "position": [0, 0, 0],
+  "position": [0, 0, 0.036],
   "cameras": [
     {
       "name": "OverridenCamera",
@@ -20,39 +20,39 @@
   "components": [
     {
       "zeroedRotations": [
-        { "axis": "x", "degrees": 0 },
+        { "axis": "x", "degrees": 90 },
         { "axis": "y", "degrees": 0 },
-        { "axis": "z", "degrees": 90 }
+        { "axis": "z", "degrees": -90 }
       ],
-      "zeroedPosition": [0.1265, 0, -0.385]
+      "zeroedPosition": [-0.1265, 0, -0.355]
     },
     {
       "zeroedRotations": [
-        { "axis": "x", "degrees": 0 },
+        { "axis": "x", "degrees": 90 },
         { "axis": "y", "degrees": 0 },
         { "axis": "z", "degrees": -90 }
+      ],
+      "zeroedPosition": [0, 0, -0.025]
+    },
+    {
+      "zeroedRotations": [
+        { "axis": "x", "degrees": 90 },
+        { "axis": "y", "degrees": 0 },
+        { "axis": "z", "degrees": 90 }
       ],
       "zeroedPosition": [0, 0, 0]
     },
     {
       "zeroedRotations": [
-        { "axis": "x", "degrees": 0 },
-        { "axis": "y", "degrees": 0 },
-        { "axis": "z", "degrees": 90 }
-      ],
-      "zeroedPosition": [0, 0, 0]
-    },
-    {
-      "zeroedRotations": [
-        { "axis": "x", "degrees": 0 },
+        { "axis": "x", "degrees": 90 },
         { "axis": "y", "degrees": 0 },
         { "axis": "z", "degrees": -90 }
       ],
-      "zeroedPosition": [0.0125, 0, -0.46]
+      "zeroedPosition": [0.01, 0, -0.43]
     },
     {
       "zeroedRotations": [
-        { "axis": "x", "degrees": 0 },
+        { "axis": "x", "degrees": 90 },
         { "axis": "y", "degrees": 0 },
         { "axis": "z", "degrees": -90 }
       ],
@@ -60,7 +60,7 @@
     },
     {
       "zeroedRotations": [
-        { "axis": "x", "degrees": 0 },
+        { "axis": "x", "degrees": 90 },
         { "axis": "y", "degrees": 0 },
         { "axis": "z", "degrees": -90 }
       ],
