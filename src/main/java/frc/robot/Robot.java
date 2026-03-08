@@ -395,9 +395,9 @@ public class Robot extends LoggedRobot {
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
                 ).withName("SwerveSpeedSlow"));
 
-        driverController.a(teleopEventLoop)
+        driverController.rightTrigger(0.5, teleopEventLoop)
                 .whileTrue(shootCommands.shoot())
                 .onFalse(intake.deploy());
-        driverController.b(teleopEventLoop).whileTrue(intake.intake());
+        driverController.leftTrigger(0.5, teleopEventLoop).whileTrue(intake.intake());
     }
 }

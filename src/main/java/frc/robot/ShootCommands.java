@@ -115,7 +115,8 @@ public class ShootCommands {
                         Commands.deadline(
                                 indexer.toFeed()
                                         .onlyWhile(superstructure::atSetpoint),
-                                intake.stowFeed()
+                                intake.stowFeed().asProxy()
+                                        .unless(intake.isIntaking)
                         )
                 )
                         .onlyIf(fuelState.hasFuel)

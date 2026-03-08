@@ -186,8 +186,6 @@ public class IntakeSlide extends SubsystemBase {
                 .getDistance(slideRetracted.getTranslation());
         final double extensionRatio = extensionMeters / totalExtensionDistance;
 
-        Logger.recordOutput("Ratio", extensionRatio);
-
         return new Pose3d[] {
                 slideRetracted.interpolate(slideExtended, extensionRatio),
                 hopperRetracted.interpolate(hopperExtended, extensionRatio)
