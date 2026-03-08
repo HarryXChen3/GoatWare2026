@@ -275,7 +275,7 @@ public class Robot extends LoggedRobot {
                 "DistanceToHub",
                 FieldConstants.getHubPose()
                         .getTranslation()
-                        .getDistance(shootCommands.turretPose(swerve.getPose()).getTranslation())
+                        .getDistance(superstructure.getTurretTranslation(swerve.getPose()))
         );
     }
 
@@ -395,7 +395,9 @@ public class Robot extends LoggedRobot {
                         () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
                 ).withName("SwerveSpeedSlow"));
 
-        driverController.a(teleopEventLoop).whileTrue(shootCommands.shoot());
+        driverController.a(teleopEventLoop)
+                .whileTrue(shootCommands.shoot())
+                .onFalse(intake.deploy());
         driverController.b(teleopEventLoop).whileTrue(intake.intake());
     }
 }

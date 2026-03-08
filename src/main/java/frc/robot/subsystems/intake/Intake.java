@@ -46,4 +46,11 @@ public class Intake {
                 rollers.toInstantGoal(IntakeRollers.Goal.OFF)
         );
     }
+
+    public Command stowFeed() {
+        return Commands.parallel(
+                slide.toGoalHold(IntakeSlide.Goal.STOW_FEED),
+                rollers.toGoal(IntakeRollers.Goal.INTAKE)
+        );
+    }
 }

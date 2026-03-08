@@ -2,6 +2,7 @@ package frc.robot.subsystems.superstructure;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -28,33 +29,36 @@ public class StaticShot {
         ShotMap.put(6.0, new ShotParameters.Shooter(27.75, 0.0565));
     }
 
-    public static Rotation2d angleToTarget(final Pose2d robotPose, final Pose2d turretPose, final Pose2d targetPose) {
+    public static Rotation2d angleToTarget(
+            final Pose2d robotPose,
+            final Translation2d turretTranslation,
+            final Pose2d targetPose
+    ) {
         return targetPose.getTranslation()
-                .minus(turretPose.getTranslation())
+                .minus(turretTranslation)
                 .getAngle()
                 .minus(robotPose.getRotation());
     }
 
     public static ShotParameters getParameters(
             final Pose2d robotPose,
-            final Pose2d turretPose,
+            final Translation2d turretTranslation,
             final ChassisSpeeds robotRelativeSpeeds,
             final Pose2d targetPose
     ) {
         return new ShotParameters(
                 ShotMap.get(
-                        turretPose
-                                .getTranslation()
+                        turretTranslation
                                 .getDistance(targetPose.getTranslation())
                 ),
-                angleToTarget(robotPose, turretPose, targetPose),
+                angleToTarget(robotPose, turretTranslation, targetPose),
                 Units.radiansToRotations(-robotRelativeSpeeds.omegaRadiansPerSecond)
         );
     }
 
     public static Supplier<ShotParameters> parametersSupplier(
             final Supplier<Pose2d> robotPoseSupplier,
-            final Function<Pose2d, Pose2d> toTurretPoseFn,
+            final Function<Pose2d, Translation2d> toTurretFn,
             final Supplier<ChassisSpeeds> robotRelativeSpeedsSupplier,
             final Supplier<Pose2d> targetPoseSupplier
     ) {
@@ -62,7 +66,7 @@ public class StaticShot {
             final Pose2d robotPose = robotPoseSupplier.get();
             return StaticShot.getParameters(
                     robotPose,
-                    toTurretPoseFn.apply(robotPose),
+                    toTurretFn.apply(robotPose),
                     robotRelativeSpeedsSupplier.get(),
                     targetPoseSupplier.get()
             );

@@ -26,7 +26,9 @@ public class IntakeSlideIOReal implements IntakeSlideIO {
     private final TorqueCurrentFOC avg_torqueCurrentFOC;
 
     private final StatusSignal<Angle> averagePosition;
+    private final StatusSignal<AngularVelocity> averageVelocity;
     private final StatusSignal<Angle> differentialPosition;
+    private final StatusSignal<AngularVelocity> differentialVelocity;
 
     private final StatusSignal<Angle> masterPosition;
     private final StatusSignal<AngularVelocity> masterVelocity;
@@ -104,7 +106,9 @@ public class IntakeSlideIOReal implements IntakeSlideIO {
         this.differentialMechanism = new DifferentialMechanism<>(TalonFX::new, differentialConstants);
 
         this.averagePosition = differentialMechanism.getAveragePosition(false);
+        this.averageVelocity = differentialMechanism.getAverageVelocity(false);
         this.differentialPosition = differentialMechanism.getDifferentialPosition(false);
+        this.differentialVelocity = differentialMechanism.getDifferentialVelocity(false);
 
         final TalonFX masterMotor = differentialMechanism.getLeader();
         this.masterPosition = masterMotor.getPosition(false);
@@ -123,7 +127,9 @@ public class IntakeSlideIOReal implements IntakeSlideIO {
         RefreshAll.add(
                 bus,
                 averagePosition,
+                averageVelocity,
                 differentialPosition,
+                differentialVelocity,
                 masterPosition,
                 masterVelocity,
                 masterVoltage,
@@ -144,7 +150,9 @@ public class IntakeSlideIOReal implements IntakeSlideIO {
         inputs.slideState = differentialMechanism.getMechanismState();
 
         inputs.slideAveragePositionRots = averagePosition.getValueAsDouble();
+        inputs.slideAverageVelocityRotsPerSec = averageVelocity.getValueAsDouble();
         inputs.slideDifferentialPositionRots = differentialPosition.getValueAsDouble();
+        inputs.slideDifferentialVelocityRotsPerSec = differentialVelocity.getValueAsDouble();
 
         inputs.masterPositionRots = masterPosition.getValueAsDouble();
         inputs.masterVelocityRotsPerSec = masterVelocity.getValueAsDouble();
@@ -180,6 +188,19 @@ public class IntakeSlideIOReal implements IntakeSlideIO {
                 diff_positionTorqueCurrentFOC
                         .withPosition(0)
                         .withSlot(1)
+        );
+    }
+
+    @Override
+    public void toSlidePositionVelocity(final double slidePositionRots, final double slideVelocityRots) {
+        differentialMechanism.setControl(
+                avg_positionTorqueCurrentFOC
+                        .withPosition(slidePositionRots)
+                        .withVelocity(slideVelocityRots)
+                        .withSlot(0),
+                diff_positionTorqueCurrentFOC
+                        .withPosition(0)
+                        .withSlot(2)
         );
     }
 

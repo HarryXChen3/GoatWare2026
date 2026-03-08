@@ -1,6 +1,7 @@
 package frc.robot;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.constants.FieldConstants;
@@ -9,8 +10,13 @@ import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.superstructure.MovingTOFShot;
+import frc.robot.subsystems.superstructure.ShotParameters;
 import frc.robot.subsystems.superstructure.StaticShot;
 import frc.robot.subsystems.superstructure.Superstructure;
+import frc.robot.utils.teleop.SwerveSpeed;
+import org.littletonrobotics.junction.Logger;
+
+import java.util.function.Supplier;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
@@ -35,10 +41,6 @@ public class ShootCommands {
         this.superstructure = superstructure;
     }
 
-    public Pose2d turretPose(final Pose2d robotPose) {
-        return robotPose.plus(superstructure.getOffsetFromCenter());
-    }
-
     public Command intake() {
         return Commands.parallel(
                 intake.intake()
@@ -46,13 +48,42 @@ public class ShootCommands {
     }
 
     public Command trackHub() {
+        final Supplier<ShotParameters> staticParameterSupplier = StaticShot.parametersSupplier(
+                swerve::getPose,
+                superstructure::getTurretTranslation,
+                swerve::getRobotRelativeSpeeds,
+                FieldConstants::getHubPose
+        );
+        final Supplier<ShotParameters> movingTOFParametersSupplier = MovingTOFShot.parametersSupplier(
+                swerve::getPose,
+                superstructure::getTurretTranslation,
+                () -> {
+                    final SwerveSpeed.Speeds speedSetpoint = SwerveSpeed.Speeds.SHOOT_AND_SCOOT;
+                    final ChassisSpeeds robotSpeeds = swerve.getRobotRelativeSpeeds();
+
+                    final double linearSpeed = Math.hypot(robotSpeeds.vxMetersPerSecond, robotSpeeds.vyMetersPerSecond);
+                    final ChassisSpeeds limitedSpeeds = robotSpeeds
+                            .div(linearSpeed)
+                            .times(Math.min(linearSpeed, speedSetpoint.getTranslationSpeed()));
+
+                    Logger.recordOutput("Limited", limitedSpeeds);
+                    return limitedSpeeds;
+                },
+                FieldConstants::getHubPose
+        );
+
         return superstructure.runParameters(
-                StaticShot.parametersSupplier(
-                        swerve::getPose,
-                        this::turretPose,
-                        swerve::getRobotRelativeSpeeds,
-                        FieldConstants::getHubPose
-                )
+                () -> {
+                    final ChassisSpeeds fieldSpeeds = swerve.getFieldRelativeSpeeds();
+                    final double linearSpeedMetersPerSec = Math.hypot(
+                            fieldSpeeds.vxMetersPerSecond,
+                            fieldSpeeds.vyMetersPerSecond
+                    );
+
+                    return linearSpeedMetersPerSec <= 1e-3
+                            ? staticParameterSupplier.get()
+                            : movingTOFParametersSupplier.get();
+                }
         ).withName("TrackHub");
     }
 
@@ -63,14 +94,13 @@ public class ShootCommands {
                         Commands.deadline(
                                 indexer.toFeed()
                                         .onlyWhile(superstructure::atSetpoint),
-                                Commands.waitSeconds(2.5)
-                                        .andThen(intake.stow())
+                                intake.stowFeed()
                         )
                 ).onlyWhile(fuelState.hasFuel),
                 superstructure.runParameters(
                         StaticShot.parametersSupplier(
                                 swerve::getPose,
-                                this::turretPose,
+                                superstructure::getTurretTranslation,
                                 swerve::getRobotRelativeSpeeds,
                                 FieldConstants::getHubPose
                         )
@@ -86,22 +116,22 @@ public class ShootCommands {
                         Commands.deadline(
                                 indexer.toFeed()
                                         .onlyWhile(superstructure::atSetpoint),
-                                Commands.waitSeconds(2.5)
-                                        .andThen(intake.stow())
+                                intake.stowFeed()
                         )
-                ).onlyWhile(fuelState.hasFuel),
+                )
+                        .onlyIf(fuelState.hasFuel)
+                        .onlyWhile(fuelState.hasFuel),
+                Commands.startEnd(
+                        () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.SHOOT_AND_SCOOT),
+                        () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
+                ),
                 superstructure.runParameters(
                         MovingTOFShot.parametersSupplier(
                                 swerve::getPose,
-                                this::turretPose,
+                                superstructure::getTurretTranslation,
                                 swerve::getRobotRelativeSpeeds,
                                 FieldConstants::getHubPose
                         )
-//                        () -> new ShotParameters(
-//                                new ShotParameters.Shooter(21, 0.05),
-//                                Rotation2d.kZero,
-//                                0
-//                        )
                 )
         ).withName("Shoot");
     }

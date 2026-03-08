@@ -16,7 +16,6 @@ import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Superstructure extends VirtualSubsystem {
@@ -42,7 +41,7 @@ public class Superstructure extends VirtualSubsystem {
         NONE,
         STOW(Goal.STOW),
         CLIMB(Goal.CLIMB),
-        DYNAMIC;
+        DYNAMIC_PARAMETERS;
 
         public static final HashMap<Goal, InternalGoal> GoalToInternal = new HashMap<>();
         static {
@@ -101,6 +100,10 @@ public class Superstructure extends VirtualSubsystem {
 
     public Transform2d getOffsetFromCenter() {
         return turret.getOffsetFromCenter();
+    }
+
+    public Translation2d getTurretTranslation(final Pose2d robotPose) {
+        return robotPose.plus(getOffsetFromCenter()).getTranslation();
     }
 
     public Pose3d[] getComponentPoses() {
@@ -186,7 +189,7 @@ public class Superstructure extends VirtualSubsystem {
         };
 
         return Commands.parallel(
-                updateDesiredGoal(InternalGoal.DYNAMIC),
+                updateDesiredGoal(InternalGoal.DYNAMIC_PARAMETERS),
                 turret.runPosition(() -> cached.get().turretAngle(), () -> cached.get().turretVelocityRotsPerSec()),
                 hood.runPosition(() -> cached.get().shooter().hoodPositionRots()),
                 shooter.runVelocity(() -> cached.get().shooter().shooterVelocityRotsPerSec()),

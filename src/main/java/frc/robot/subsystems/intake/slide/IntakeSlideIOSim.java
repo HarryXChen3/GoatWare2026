@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DynamicMotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
@@ -20,10 +21,7 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.constants.HardwareConstants;
-import frc.robot.constants.RobotMap;
 import frc.robot.utils.closeables.ToClose;
 import frc.robot.utils.control.DeltaTime;
 import frc.robot.utils.ctre.RefreshAll;
@@ -45,7 +43,9 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
     private final TorqueCurrentFOC avg_torqueCurrentFOC;
 
     private final StatusSignal<Angle> averagePosition;
+    private final StatusSignal<AngularVelocity> averageVelocity;
     private final StatusSignal<Angle> differentialPosition;
+    private final StatusSignal<AngularVelocity> differentialVelocity;
 
     private final StatusSignal<Angle> masterPosition;
     private final StatusSignal<AngularVelocity> masterVelocity;
@@ -72,11 +72,11 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
 
         final TalonFXConfiguration masterConfiguration = new TalonFXConfiguration();
         masterConfiguration.Slot0 = new Slot0Configs()
-                .withKS(4)
+                .withKS(10.2)
                 .withKV(0)
-                .withKA(0)
-                .withKP(85)
-                .withKD(6);
+                .withKA(0.4)
+                .withKP(400)
+                .withKD(8);
         masterConfiguration.Slot1 = new Slot1Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
@@ -91,8 +91,8 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
                 .withKP(680)
                 .withKD(12);
         masterConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
-        masterConfiguration.MotionMagic.MotionMagicExpo_kV = 0.12;
-        masterConfiguration.MotionMagic.MotionMagicExpo_kA = 0.1;
+        masterConfiguration.MotionMagic.MotionMagicExpo_kV = 0.6;
+        masterConfiguration.MotionMagic.MotionMagicExpo_kA = 0.3;
         masterConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
         masterConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
         masterConfiguration.CurrentLimits.StatorCurrentLimit = 60;
@@ -125,7 +125,9 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
         this.differentialMechanism = new DifferentialMechanism<>(TalonFX::new, differentialConstants);
 
         this.averagePosition = differentialMechanism.getAveragePosition(false);
+        this.averageVelocity = differentialMechanism.getAverageVelocity(false);
         this.differentialPosition = differentialMechanism.getDifferentialPosition(false);
+        this.differentialVelocity = differentialMechanism.getDifferentialVelocity(false);
 
         final TalonFX masterMotor = differentialMechanism.getLeader();
         {
@@ -184,7 +186,9 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
         RefreshAll.add(
                 bus,
                 averagePosition,
+                averageVelocity,
                 differentialPosition,
+                differentialVelocity,
                 masterPosition,
                 masterVelocity,
                 masterVoltage,
@@ -218,7 +222,9 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
         inputs.slideState = differentialMechanism.getMechanismState();
 
         inputs.slideAveragePositionRots = averagePosition.getValueAsDouble();
+        inputs.slideAverageVelocityRotsPerSec = averageVelocity.getValueAsDouble();
         inputs.slideDifferentialPositionRots = differentialPosition.getValueAsDouble();
+        inputs.slideDifferentialVelocityRotsPerSec = differentialVelocity.getValueAsDouble();
 
         inputs.masterPositionRots = masterPosition.getValueAsDouble();
         inputs.masterVelocityRotsPerSec = masterVelocity.getValueAsDouble();
@@ -254,6 +260,19 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
                 diff_positionTorqueCurrentFOC
                         .withPosition(0)
                         .withSlot(1)
+        );
+    }
+
+    @Override
+    public void toSlidePositionVelocity(final double slidePositionRots, final double slideVelocityRots) {
+        differentialMechanism.setControl(
+                avg_positionTorqueCurrentFOC
+                        .withPosition(slidePositionRots)
+                        .withVelocity(slideVelocityRots)
+                        .withSlot(0),
+                diff_positionTorqueCurrentFOC
+                        .withPosition(0)
+                        .withSlot(2)
         );
     }
 

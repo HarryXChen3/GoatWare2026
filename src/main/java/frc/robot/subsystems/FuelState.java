@@ -6,6 +6,7 @@ import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
@@ -19,6 +20,7 @@ import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.superstructure.MovingTOFShot;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.utils.Container;
 import frc.robot.utils.commands.LoggedTrigger;
@@ -121,27 +123,36 @@ public class FuelState extends VirtualSubsystem {
     private void configureSimTriggers() {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
 
-        final double fuelIntakePerSecond = 5;
+        final double fuelIntakePerSecond = 50;
         intake.isIntaking.whileTrue(setInterval(1 / fuelIntakePerSecond, () -> simFuelCount++));
 
-        final double fuelFedPerSecond = 8;
+        final double fuelFedPerSecond = 18;
         indexer.isFeeding
                 .and(hasFuel)
                 .and(hasSimFuel)
                 .whileTrue(setInterval(
                         1 / fuelFedPerSecond,
                         () -> {
+                            final Pose2d robotPose = swerve.getPose();
                             final Pose3d hoodComponentPose = superstructure.getComponentPoses()[1];
-                            final Pose3d hoodPose = new Pose3d(swerve.getPose())
+                            final Pose3d hoodPose = new Pose3d(robotPose)
                                     .plus(new Transform3d(
                                             hoodComponentPose.getTranslation(),
                                             hoodComponentPose.getRotation()
                                     ))
                                     .plus(SimConstants.Hood.FuelExitOffset);
 
-                            fuelCache.spawn(hoodPose, ShooterOmegaToBallVelocity.get(
-                                    superstructure.getShooterVelocityRotsPerSec()
-                            ));
+                            final ChassisSpeeds turretFieldSpeeds = MovingTOFShot.getTurretFieldSpeeds(
+                                    robotPose,
+                                    superstructure.getTurretTranslation(robotPose),
+                                    swerve.getFieldRelativeSpeeds()
+                            );
+
+                            fuelCache.spawn(
+                                    hoodPose,
+                                    ShooterOmegaToBallVelocity.get(superstructure.getShooterVelocityRotsPerSec()),
+                                    turretFieldSpeeds
+                            );
                             simFuelCount = Math.max(simFuelCount - 1, 0);
                         }
                 ));
@@ -222,9 +233,13 @@ public class FuelState extends VirtualSubsystem {
             this(capacity, null);
         }
 
-        public void spawn(final Pose3d pose, final double velocityMetersPerSec) {
+        public void spawn(
+                final Pose3d pose,
+                final double velocityMetersPerSec,
+                final ChassisSpeeds turretFieldSpeeds
+        ) {
             final Fuel cached = fuel[index];
-            cached.at(pose, velocityMetersPerSec);
+            cached.at(pose, velocityMetersPerSec, turretFieldSpeeds);
             index = (index + 1) % fuel.length;
         }
 
@@ -280,7 +295,11 @@ public class FuelState extends VirtualSubsystem {
                 this.z = pos.getZ();
             }
 
-            public void at(final Pose3d pose, final double velocityMetersPerSec) {
+            public void at(
+                    final Pose3d pose,
+                    final double velocityMetersPerSec,
+                    final ChassisSpeeds turretFieldSpeeds
+            ) {
                 active = true;
                 activeStartTime = Timer.getFPGATimestamp();
 
@@ -297,8 +316,8 @@ public class FuelState extends VirtualSubsystem {
                 final Translation3d velocity = ForwardAxis.rotateBy(randomized.getRotation())
                         .times(velocityMetersPerSec);
 
-                vx = velocity.getX();
-                vy = velocity.getY();
+                vx = velocity.getX() + turretFieldSpeeds.vxMetersPerSecond;
+                vy = velocity.getY() + turretFieldSpeeds.vyMetersPerSecond;
                 vz = velocity.getZ();
             }
 

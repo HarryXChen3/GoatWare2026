@@ -24,14 +24,49 @@ public class MovingTOFShot {
         TimeOfFlightMap.put(5.73, 1.31);
     }
 
+    public static ChassisSpeeds getTurretFieldSpeeds(
+            final Pose2d robotPose,
+            final Translation2d turretTranslation,
+            final ChassisSpeeds fieldRelativeSpeeds
+    ) {
+        return getTurretFieldSpeeds(
+                robotPose,
+                new Transform2d(turretTranslation.minus(robotPose.getTranslation()), Rotation2d.kZero),
+                fieldRelativeSpeeds
+        );
+    }
+
+    public static ChassisSpeeds getTurretFieldSpeeds(
+            final Pose2d robotPose,
+            final Transform2d turretOffset,
+            final ChassisSpeeds fieldRelativeSpeeds
+    ) {
+        final Rotation2d robotAngle = robotPose.getRotation();
+        final double robotOmegaRadsPerSec = fieldRelativeSpeeds.omegaRadiansPerSecond;
+
+        final double offsetX = turretOffset.getX();
+        final double offsetY = turretOffset.getY();
+        final double cos = robotAngle.getCos();
+        final double sin = robotAngle.getSin();
+
+        final double tangentVx = robotOmegaRadsPerSec * (offsetY * cos - offsetX * sin);
+        final double tangentVy = robotOmegaRadsPerSec * (offsetX * cos - offsetY * sin);
+
+        return new ChassisSpeeds(
+                fieldRelativeSpeeds.vxMetersPerSecond + tangentVx,
+                fieldRelativeSpeeds.vyMetersPerSecond + tangentVy,
+                robotOmegaRadsPerSec
+        );
+    }
+
     public static ShotParameters getParameters(
             final Pose2d robotPose,
-            final Pose2d turretPose,
+            final Translation2d turretTranslation,
             final ChassisSpeeds robotRelativeSpeeds,
             final Pose2d targetPose
     ) {
-        final double distance = turretPose
-                .getTranslation()
+        final Pose2d offsetTurretPose = new Pose2d(turretTranslation, Rotation2d.kZero);
+        final double distance = turretTranslation
                 .getDistance(targetPose.getTranslation());
         final Rotation2d robotAngle = robotPose.getRotation();
         final ChassisSpeeds fieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(
@@ -39,30 +74,11 @@ public class MovingTOFShot {
                 robotAngle
         );
 
-        final Transform2d turretOffset = turretPose.minus(robotPose);
-        final double robotOmegaRadsPerSec = fieldRelativeSpeeds.omegaRadiansPerSecond;
-
-        final double tangentVx = robotOmegaRadsPerSec *
-                new Translation2d(turretOffset.getY(), turretOffset.getX())
-                        .rotateBy(robotAngle)
-                        .getX();
-        final double tangentVy = robotOmegaRadsPerSec *
-                turretOffset
-                        .getTranslation()
-                        .rotateBy(robotAngle)
-                        .getX();
-
-        final ChassisSpeeds turretFieldVelocity = new ChassisSpeeds(
-                fieldRelativeSpeeds.vxMetersPerSecond + tangentVx,
-                fieldRelativeSpeeds.vyMetersPerSecond + tangentVy,
-                robotOmegaRadsPerSec
-        );
-        Logger.recordOutput("Speeds", turretFieldVelocity);
-
-        final Pose2d[] poses = new Pose2d[20];
+        final Transform2d turretOffset = offsetTurretPose.minus(robotPose);
+        final ChassisSpeeds turretFieldVelocity = getTurretFieldSpeeds(robotPose, turretOffset, fieldRelativeSpeeds);
 
         double timeOfFlight;
-        Pose2d futureTurretPose = turretPose;
+        Pose2d futureTurretPose = offsetTurretPose;
         double futureDistance = distance;
 
         for (int i = 0; i < 20; i++) {
@@ -73,25 +89,17 @@ public class MovingTOFShot {
                     turretFieldVelocity.vyMetersPerSecond * timeOfFlight
             );
             futureTurretPose = new Pose2d(
-                    turretPose.getTranslation().plus(delta),
-                    turretPose.getRotation()
+                    offsetTurretPose.getTranslation().plus(delta),
+                    offsetTurretPose.getRotation()
             );
             futureDistance = futureTurretPose.getTranslation()
                     .getDistance(targetPose.getTranslation());
-
-            poses[i] = new Pose2d(futureTurretPose.getX(), futureTurretPose.getY(), futureTurretPose.getRotation());
         }
 
-        Logger.recordOutput("TurretPose", futureTurretPose);
-        Logger.recordOutput("TurretPoses", poses);
-
         final Pose2d futureRobotPose = futureTurretPose.transformBy(turretOffset.inverse());
-
-        Logger.recordOutput("RobotPose", futureRobotPose);
-
         return StaticShot.getParameters(
                 futureRobotPose,
-                futureTurretPose,
+                futureTurretPose.getTranslation(),
                 robotRelativeSpeeds,
                 targetPose
         );
@@ -99,7 +107,7 @@ public class MovingTOFShot {
 
     public static Supplier<ShotParameters> parametersSupplier(
             final Supplier<Pose2d> robotPoseSupplier,
-            final Function<Pose2d, Pose2d> toTurretPoseFn,
+            final Function<Pose2d, Translation2d> toTurretFn,
             final Supplier<ChassisSpeeds> robotRelativeSpeedsSupplier,
             final Supplier<Pose2d> targetPoseSupplier
     ) {
@@ -107,7 +115,7 @@ public class MovingTOFShot {
             final Pose2d robotPose = robotPoseSupplier.get();
             return MovingTOFShot.getParameters(
                     robotPose,
-                    toTurretPoseFn.apply(robotPose),
+                    toTurretFn.apply(robotPose),
                     robotRelativeSpeedsSupplier.get(),
                     targetPoseSupplier.get()
             );

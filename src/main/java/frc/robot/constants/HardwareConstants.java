@@ -167,7 +167,7 @@ public class HardwareConstants {
             22,
             (60.0 / 12.0) * (40.0 / 18.0),
             1,
-            3.9,
+            3.6,
             0
     );
 

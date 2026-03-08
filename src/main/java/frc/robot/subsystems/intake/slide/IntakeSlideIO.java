@@ -9,7 +9,9 @@ public interface IntakeSlideIO {
         public MechanismState slideState;
 
         public double slideAveragePositionRots = 0;
+        public double slideAverageVelocityRotsPerSec = 0;
         public double slideDifferentialPositionRots = 0;
+        public double slideDifferentialVelocityRotsPerSec = 0;
 
         public double masterPositionRots = 0;
         public double masterVelocityRotsPerSec = 0;
@@ -29,6 +31,8 @@ public interface IntakeSlideIO {
     default void toSlidePosition(final double slidePositionRots) {}
 
     default void holdSlidePosition(final double slidePositionRots) {}
+
+    default void toSlidePositionVelocity(final double slidePositionRots, final double slideVelocityRotsPerSec) {}
 
     default void toSlideTorqueCurrent(final double slideTorqueCurrentAmps) {}
 }
