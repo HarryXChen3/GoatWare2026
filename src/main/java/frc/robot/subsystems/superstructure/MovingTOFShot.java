@@ -29,7 +29,7 @@ public class MovingTOFShot {
     ) {
         return getTurretFieldSpeeds(
                 robotPose,
-                new Transform2d(turretTranslation.minus(robotPose.getTranslation()), Rotation2d.kZero),
+                new Pose2d(turretTranslation, Rotation2d.kZero).minus(robotPose),
                 fieldRelativeSpeeds
         );
     }
@@ -47,7 +47,7 @@ public class MovingTOFShot {
         final double cos = robotAngle.getCos();
         final double sin = robotAngle.getSin();
 
-        final double tangentVx = robotOmegaRadsPerSec * (offsetY * cos - offsetX * sin);
+        final double tangentVx = -robotOmegaRadsPerSec * (offsetX * sin + offsetY * cos);
         final double tangentVy = robotOmegaRadsPerSec * (offsetX * cos - offsetY * sin);
 
         return new ChassisSpeeds(
