@@ -2,6 +2,8 @@ package frc.robot.auto;
 
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
+import choreo.auto.AutoTrajectory;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.Robot;
@@ -20,7 +22,6 @@ public class Autos {
             final PhotonVision photonVision
     ) {
         this.swerve = swerve;
-
         this.autoFactory = new AutoFactory(
                 swerve::getPose,
                 photonVision::resetPose,
@@ -29,20 +30,27 @@ public class Autos {
                 swerve,
                 (trajectory, trajectoryRunning) -> {
                     Logger.recordOutput(
-                            Autos.LogKey + "/Trajectory/Path",
+                            LogKey + "/Trajectory/Path",
                             (Robot.IsRedAlliance.getAsBoolean() ? trajectory.flipped() : trajectory).getPoses()
                     );
 
                     Logger.recordOutput(
-                            Autos.LogKey + "/Trajectory/Name",
+                            LogKey + "/Trajectory/Name",
                             trajectory.name()
                     );
 
                     Logger.recordOutput(
-                            Autos.LogKey + "/Trajectory/Running",
+                            LogKey + "/Trajectory/Running",
                             trajectoryRunning
                     );
                 }
+        );
+    }
+
+    private Command runStartingTrajectory(final AutoTrajectory startingTrajectory) {
+        return Commands.sequence(
+                startingTrajectory.resetOdometry(),
+                startingTrajectory.cmd()
         );
     }
 
@@ -52,6 +60,26 @@ public class Autos {
         routine.active().whileTrue(
                 Commands.waitUntil(RobotModeTriggers.autonomous().negate())
         );
+
+        return routine;
+    }
+
+    public AutoRoutine upAndAtEm() {
+        final AutoRoutine routine = autoFactory.newRoutine("UpAndAtEm");
+        final AutoTrajectory upAndAtEm = routine.trajectory("UpAndAtEm");
+
+        routine.active().onTrue(runStartingTrajectory(upAndAtEm));
+        upAndAtEm.done().onTrue(swerve.wheelXCommand());
+
+        return routine;
+    }
+
+    public AutoRoutine downAndAtEm() {
+        final AutoRoutine routine = autoFactory.newRoutine("DownAndAtEm");
+        final AutoTrajectory downAndAtEm = routine.trajectory("DownAndAtEm");
+
+        routine.active().onTrue(runStartingTrajectory(downAndAtEm));
+        downAndAtEm.done().onTrue(swerve.wheelXCommand());
 
         return routine;
     }

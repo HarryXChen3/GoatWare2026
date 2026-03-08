@@ -51,6 +51,8 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -375,11 +377,17 @@ public class Robot extends LoggedRobot {
     public void configureAutos() {
         autonomousEnabled.whileTrue(Commands.deferredProxy(() -> autoChooser.getSelected().cmd()));
 
-//        autoChooser.addAutoOption(new AutoOption(
-//                "Auto",
-//                autos::Auto,
-//                Constants.CompetitionType.COMPETITION
-//        ));
+        autoChooser.addAutoOption(new AutoOption(
+                "UpAndAtEm",
+                autos::upAndAtEm,
+                Constants.CompetitionType.COMPETITION
+        ));
+
+        autoChooser.addAutoOption(new AutoOption(
+                "DownAndAtEm",
+                autos::downAndAtEm,
+                Constants.CompetitionType.COMPETITION
+        ));
     }
 
     public void configureButtonBindings(final EventLoop teleopEventLoop) {
