@@ -5,16 +5,17 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
+import frc.robot.utils.commands.LoggedTrigger;
+import frc.robot.utils.commands.SubsystemExt;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
-public class Hood extends SubsystemBase {
+public class Hood extends SubsystemExt {
     protected static final String LogKey = "Hood";
     private static final double PositionToleranceRots = 0.005;
     private static final double VelocityToleranceRotsPerSec = 0.1;
@@ -58,6 +59,8 @@ public class Hood extends SubsystemBase {
         }
     }
 
+    private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
+
     private final HoodIO hoodIO;
     private final HoodIOInputsAutoLogged inputs;
 
@@ -65,6 +68,8 @@ public class Hood extends SubsystemBase {
     private InternalGoal currentGoal = InternalGoal.NONE;
 
     private double positionSetpointRots;
+
+    public final LoggedTrigger safeForTrench = atGoal(Hood.Goal.STOW);
 
     public Hood(final Constants.RobotMode mode, final HardwareConstants.HoodConstants constants) {
         this.hoodIO = switch (mode) {
@@ -111,6 +116,14 @@ public class Hood extends SubsystemBase {
         return desiredGoal == currentGoal;
     }
 
+    private boolean atGoal(final InternalGoal goal) {
+        return currentGoal == goal;
+    }
+
+    public LoggedTrigger atGoal(final Goal goal) {
+        return group.t("AtGoal", () -> atGoal(InternalGoal.fromGoal(goal)));
+    }
+
     private void setPositionImpl(final double positionRots) {
         positionSetpointRots = positionRots;
         hoodIO.toHoodPosition(positionSetpointRots);
@@ -122,30 +135,28 @@ public class Hood extends SubsystemBase {
     }
 
     public Command toGoal(final Goal goal) {
-        return runEnd(
+        return startEnd(
                 () -> setGoalImpl(goal),
                 () -> setGoalImpl(Goal.STOW)
         );
     }
 
     public Command runGoal(final Goal goal) {
-        return run(() -> setGoalImpl(goal));
+        return startEnd(() -> setGoalImpl(goal), () -> {});
     }
 
     public Command toPosition(final DoubleSupplier positionRotsSupplier) {
-        return runEnd(
-                () -> {
-                   desiredGoal = InternalGoal.TRACKING;
-                   setPositionImpl(positionRotsSupplier.getAsDouble());
-                },
+        return instantRunEnd(
+                () -> desiredGoal = InternalGoal.TRACKING,
+                () -> setPositionImpl(positionRotsSupplier.getAsDouble()),
                 () -> setGoalImpl(Goal.STOW)
         );
     }
 
     public Command runPosition(final DoubleSupplier positionRotsSupplier) {
-        return run(() -> {
-            desiredGoal = InternalGoal.TRACKING;
-            setPositionImpl(positionRotsSupplier.getAsDouble());
-        });
+        return instantRun(
+                () -> desiredGoal = InternalGoal.TRACKING,
+                () -> setPositionImpl(positionRotsSupplier.getAsDouble())
+        );
     }
 }

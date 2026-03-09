@@ -33,6 +33,22 @@ public class FieldConstants {
     public static final Pose2d RED_FERRY_LEFT = BLUE_FERRY_LEFT.relativeTo(RED_ORIGIN);
     public static final Pose2d RED_FERRY_RIGHT = BLUE_FERRY_RIGHT.relativeTo(RED_ORIGIN);
 
+    private static final double TRENCH_WIDTH = Units.inchesToMeters(6);
+    private static final double TURRET_SAFE_BUFFER = Units.inchesToMeters(12);
+    public static final double BLUE_TURRET_SAFE_X_CLOSE_BOUNDARY = BLUE_HUB_POSE.getX()
+            - (TRENCH_WIDTH / 2)
+            - TURRET_SAFE_BUFFER;
+    public static final double RED_TURRET_SAFE_X_CLOSE_BOUNDARY = RED_HUB_POSE.getX()
+            + (TRENCH_WIDTH / 2)
+            + TURRET_SAFE_BUFFER;
+
+    public static final double BLUE_TURRET_SAFE_X_FAR_BOUNDARY = BLUE_HUB_POSE.getX()
+            + (TRENCH_WIDTH / 2)
+            + TURRET_SAFE_BUFFER;
+    public static final double RED_TURRET_SAFE_X_FAR_BOUNDARY = RED_HUB_POSE.getX()
+            - (TRENCH_WIDTH / 2)
+            - TURRET_SAFE_BUFFER;
+
     private static <T> T getAllianceFlipped(final T blueAlliance, final T redAlliance) {
         return Robot.IsRedAlliance.getAsBoolean() ? redAlliance : blueAlliance;
     }
@@ -59,5 +75,13 @@ public class FieldConstants {
 
     public static Pose2d getFerryRight() {
         return getAllianceFlipped(BLUE_FERRY_RIGHT, RED_FERRY_RIGHT);
+    }
+
+    public static double getTurretSafeXCloseBoundary() {
+        return getAllianceFlipped(BLUE_TURRET_SAFE_X_CLOSE_BOUNDARY, RED_TURRET_SAFE_X_CLOSE_BOUNDARY);
+    }
+
+    public static double getTurretSafeXFarBoundary() {
+        return getAllianceFlipped(BLUE_TURRET_SAFE_X_FAR_BOUNDARY, RED_TURRET_SAFE_X_FAR_BOUNDARY);
     }
 }

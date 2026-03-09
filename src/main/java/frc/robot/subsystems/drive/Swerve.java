@@ -908,8 +908,8 @@ public class Swerve extends SubsystemBase {
                 MathUtil.angleModulus(currentPose.getRotation().getRadians())
         );
 
-//        drive(speeds, swerveSample.moduleForcesX(), swerveSample.moduleForcesY());
-        drive(speeds);
+        drive(speeds, swerveSample.moduleForcesX(), swerveSample.moduleForcesY());
+//        drive(speeds);
     }
 
     @SuppressWarnings("unused")

@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 
 public class Superstructure extends VirtualSubsystem {
     protected static final String LogKey = "Superstructure";
-    protected static final LoggedTrigger.Group Group = LoggedTrigger.Group.from(LogKey);
 
     public enum Goal {
         STOW(Hood.Goal.STOW, Shooter.Goal.IDLE, Turret.Goal.IDLE),
@@ -67,6 +66,8 @@ public class Superstructure extends VirtualSubsystem {
         }
     }
 
+    private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
+
     private final Turret turret;
     private final Shooter shooter;
     private final Hood hood;
@@ -74,10 +75,14 @@ public class Superstructure extends VirtualSubsystem {
     private InternalGoal desiredGoal = InternalGoal.STOW;
     private InternalGoal currentGoal = InternalGoal.NONE;
 
+    public final LoggedTrigger safeForTrench;
+
     public Superstructure(final Turret turret, final Shooter shooter, final Hood hood) {
         this.turret = turret;
         this.shooter = shooter;
         this.hood = hood;
+
+        this.safeForTrench = hood.safeForTrench;
     }
 
     @Override
@@ -92,6 +97,8 @@ public class Superstructure extends VirtualSubsystem {
 
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
         Logger.recordOutput(LogKey + "/CurrentGoal", currentGoal);
+
+        Logger.recordOutput(LogKey + "/SafeForTrench", safeForTrench);
 
         Logger.recordOutput(
                 LogKey + "/PeriodicIOPeriodMs",
@@ -134,7 +141,7 @@ public class Superstructure extends VirtualSubsystem {
     }
 
     public LoggedTrigger atGoal(final Goal goal) {
-        return Group.t("AtGoal", () -> atGoal(InternalGoal.fromGoal(goal)));
+        return group.t("AtGoal", () -> atGoal(InternalGoal.fromGoal(goal)));
     }
 
     public boolean atSetpoint() {
@@ -198,7 +205,7 @@ public class Superstructure extends VirtualSubsystem {
                 hoodCommand.apply(cached),
                 shooter.runVelocity(() -> cached.get().shooter().shooterVelocityRotsPerSec()),
                 Commands.run(parameters::clear)
-        );
+        ).withName("RunParameters");
     }
 
     public Command runParameters(final Supplier<ShotParameters> shotParametersSupplier) {

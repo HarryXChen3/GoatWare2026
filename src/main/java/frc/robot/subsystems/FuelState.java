@@ -42,7 +42,7 @@ public class FuelState extends VirtualSubsystem {
     private final Indexer indexer;
     private final Superstructure superstructure;
 
-    private int simFuelCount = 500;
+    private int simFuelCount = 0;
     private final FuelCache fuelCache;
     private final LoggedTrigger hasSimFuel;
 
@@ -85,10 +85,7 @@ public class FuelState extends VirtualSubsystem {
                     return false;
                 });
                 configureSimTriggers();
-
-                if (simFuelCount > 0) {
-                    indexer.setFeederTOFDetected(true);
-                }
+                setSimFuelCount(simFuelCount);
             }
             default -> this.fuelCache = null;
         }
@@ -111,6 +108,17 @@ public class FuelState extends VirtualSubsystem {
         }
     }
 
+    public void setSimFuelCount(final int simFuelCount) {
+        switch (mode) {
+            case SIM, REPLAY -> {
+                this.simFuelCount = simFuelCount;
+                if (simFuelCount > 0) {
+                    indexer.setFeederTOFDetected(true);
+                }
+            }
+        }
+    }
+
     private void configureStateTriggers() {
         intake.isIntaking.and(hasFuel.negate())
                 .whileTrue(indexer.toFeed());
@@ -119,7 +127,7 @@ public class FuelState extends VirtualSubsystem {
     private void configureSimTriggers() {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
 
-        final double fuelIntakePerSecond = 50;
+        final double fuelIntakePerSecond = 10;
         intake.isIntaking.whileTrue(setInterval(1 / fuelIntakePerSecond, () -> simFuelCount++));
 
         final double fuelFedPerSecond = 18;

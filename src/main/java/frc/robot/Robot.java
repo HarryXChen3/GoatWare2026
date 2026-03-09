@@ -51,8 +51,6 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -131,7 +129,7 @@ public class Robot extends LoggedRobot {
     );
 
     public final Autos autos = new Autos(
-            swerve,
+            swerve, intake, indexer, fuelState, superstructure,
             photonVision
     );
     public final AutoChooser autoChooser = new AutoChooser(
@@ -221,7 +219,7 @@ public class Robot extends LoggedRobot {
                 DriverStationSim.notifyNewData();
 
                 autonomousEnabled.whileTrue(
-                        Commands.waitSeconds(15)
+                        Commands.waitSeconds(20)
                                 .andThen(() -> {
                                     DriverStationSim.setEnabled(false);
                                     DriverStationSim.notifyNewData();
@@ -349,21 +347,21 @@ public class Robot extends LoggedRobot {
     public void configureStateTriggers() {
         {
             final CommandScheduler scheduler = CommandScheduler.getInstance();
-            final Command trackHubCommand = shootCommands.trackTarget();
-            final Set<Subsystem> trackHubRequirements = trackHubCommand.getRequirements();
+            final Command trackTargetCommand = shootCommands.trackTarget();
+            final Set<Subsystem> trackTargetRequirements = trackTargetCommand.getRequirements();
             teleopEnabled.whileTrue(Commands.run(() -> {
-                if (scheduler.isScheduled(trackHubCommand)) {
+                if (scheduler.isScheduled(trackTargetCommand)) {
                     return;
                 }
 
-                for (final Subsystem subsystem : trackHubRequirements) {
+                for (final Subsystem subsystem : trackTargetRequirements) {
                     if (scheduler.requiring(subsystem) != null) {
                         return;
                     }
                 }
 
-                scheduler.schedule(trackHubCommand);
-            }).withName("ScheduleTrackHub"));
+                scheduler.schedule(trackTargetCommand);
+            }).withName("ScheduleTrackTarget"));
         }
 
         autonomousEnabled.or(teleopEnabled).onTrue(intake.deploy());
@@ -386,6 +384,12 @@ public class Robot extends LoggedRobot {
         autoChooser.addAutoOption(new AutoOption(
                 "DownAndAtEm",
                 autos::downAndAtEm,
+                Constants.CompetitionType.COMPETITION
+        ));
+
+        autoChooser.addAutoOption(new AutoOption(
+                "CatchMeIfYouCan",
+                autos::catchMeIfYouCan,
                 Constants.CompetitionType.COMPETITION
         ));
     }

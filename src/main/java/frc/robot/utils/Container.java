@@ -33,7 +33,7 @@ public class Container<T> implements Supplier<T> {
     }
 
     public Command setCommand(final Supplier<T> valueSupplier) {
-        return Commands.runOnce(() -> this.set(valueSupplier.get())).withName("Container");
+        return Commands.runOnce(() -> set(valueSupplier.get())).withName("Container");
     }
 
     public Command setCommand(final T value) {

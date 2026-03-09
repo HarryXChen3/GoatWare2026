@@ -25,7 +25,7 @@ public class ShootCommands {
     protected static final String LogKey = "ShootCommands";
     private static final SwerveSpeed.Speeds ShootAndScootSpeeds = SwerveSpeed.Speeds.SHOOT_AND_SCOOT;
     private static final double ShootAndScootTolerance = 0.25;
-    private enum Target {
+    public enum Target {
         HUB,
         FERRY,
         NONE_FERRY_BLOCKED
@@ -53,14 +53,14 @@ public class ShootCommands {
         this.superstructure = superstructure;
     }
 
-    private static double linearSpeed(final ChassisSpeeds speeds) {
+    public static double linearSpeed(final ChassisSpeeds speeds) {
         return Math.hypot(
                 speeds.vxMetersPerSecond,
                 speeds.vyMetersPerSecond
         );
     }
 
-    private static Target getTarget(final Pose2d robotPose) {
+    public static Target getTarget(final Pose2d robotPose) {
         final double robotX = robotPose.getX();
         final double robotY = robotPose.getY();
 
