@@ -145,7 +145,10 @@ public class ShootCommands {
                                         .onlyWhile(targetValid.and(superstructure::atSetpoint)),
                                 intake.stowFeed()
                         )
-                ).onlyWhile(fuelState.hasFuel),
+                )
+                        .onlyIf(fuelState.hasFuel)
+                        .onlyWhile(fuelState.hasFuel
+                                .or(intake.isIntaking)),
                 superstructure.runParameters(
                         StaticShot.parametersSupplier(
                                 swerve::getPose,
@@ -188,7 +191,8 @@ public class ShootCommands {
                         )
                 )
                         .onlyIf(fuelState.hasFuel)
-                        .onlyWhile(fuelState.hasFuel),
+                        .onlyWhile(fuelState.hasFuel
+                                .or(intake.isIntaking)),
                 Commands.sequence(
                         originalSpeeds.setCommand(SwerveSpeed.getSwerveSpeed()),
                         Commands.startEnd(

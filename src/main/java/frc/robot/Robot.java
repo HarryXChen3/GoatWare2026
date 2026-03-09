@@ -7,10 +7,8 @@ import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.auto.AutoChooser;
@@ -36,6 +34,7 @@ import frc.robot.subsystems.superstructure.shooter.Shooter;
 import frc.robot.subsystems.superstructure.turret.Turret;
 import frc.robot.subsystems.vision.PhotonVision;
 import frc.robot.utils.closeables.ToClose;
+import frc.robot.utils.commands.CommandsExt;
 import frc.robot.utils.commands.LoggedTrigger;
 import frc.robot.utils.commands.RobotModeLoggedTriggers;
 import frc.robot.utils.ctre.RefreshAll;
@@ -54,7 +53,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 public class Robot extends LoggedRobot {
@@ -345,24 +343,7 @@ public class Robot extends LoggedRobot {
     }
 
     public void configureStateTriggers() {
-        {
-            final CommandScheduler scheduler = CommandScheduler.getInstance();
-            final Command trackTargetCommand = shootCommands.trackTarget();
-            final Set<Subsystem> trackTargetRequirements = trackTargetCommand.getRequirements();
-            teleopEnabled.whileTrue(Commands.run(() -> {
-                if (scheduler.isScheduled(trackTargetCommand)) {
-                    return;
-                }
-
-                for (final Subsystem subsystem : trackTargetRequirements) {
-                    if (scheduler.requiring(subsystem) != null) {
-                        return;
-                    }
-                }
-
-                scheduler.schedule(trackTargetCommand);
-            }).withName("ScheduleTrackTarget"));
-        }
+        teleopEnabled.whileTrue(CommandsExt.defaultCommand(shootCommands.trackTarget()));
 
         autonomousEnabled.or(teleopEnabled).onTrue(intake.deploy());
 

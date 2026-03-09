@@ -22,6 +22,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.superstructure.MovingTOFShot;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.utils.Container;
+import frc.robot.utils.commands.CommandsExt;
 import frc.robot.utils.commands.LoggedTrigger;
 import frc.robot.utils.control.DeltaTime;
 import frc.robot.utils.subsystems.VirtualSubsystem;
@@ -121,7 +122,7 @@ public class FuelState extends VirtualSubsystem {
 
     private void configureStateTriggers() {
         intake.isIntaking.and(hasFuel.negate())
-                .whileTrue(indexer.toFeed());
+                .whileTrue(CommandsExt.defaultCommand(indexer.toFeed()));
     }
 
     private void configureSimTriggers() {
