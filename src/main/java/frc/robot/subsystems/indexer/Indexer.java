@@ -38,7 +38,7 @@ public class Indexer extends VirtualSubsystem {
     }
 
     private Command feeding() {
-        return Commands.runEnd(() -> feeding = true, () -> feeding = false);
+        return Commands.runEnd(() -> feeding = true, () -> feeding = false).withName("FeedingImpl");
     }
 
     public Command toFeed() {
@@ -46,6 +46,6 @@ public class Indexer extends VirtualSubsystem {
                 feeding(),
                 hopper.toGoal(Hopper.Goal.FEED),
                 feeder.toGoal(Feeder.Goal.FEED)
-        );
+        ).withName("Feeding");
     }
 }

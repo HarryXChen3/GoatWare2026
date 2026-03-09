@@ -25,7 +25,7 @@ public class Intake {
     }
 
     private Command intaking() {
-        return Commands.startEnd(() -> intaking = true, () -> intaking = false);
+        return Commands.startEnd(() -> intaking = true, () -> intaking = false).withName("IntakingImpl");
     }
 
     public Command intake() {
@@ -33,24 +33,24 @@ public class Intake {
                 intaking(),
                 slide.toInstantGoal(IntakeSlide.Goal.INTAKE),
                 rollers.toGoal(IntakeRollers.Goal.INTAKE)
-        );
+        ).withName("Intaking");
     }
 
     public Command deploy() {
-        return slide.toInstantGoal(IntakeSlide.Goal.INTAKE);
+        return slide.toInstantGoal(IntakeSlide.Goal.INTAKE).withName("DeployIntake");
     }
 
     public Command stow() {
         return Commands.parallel(
                 slide.toInstantGoal(IntakeSlide.Goal.STOW),
                 rollers.toInstantGoal(IntakeRollers.Goal.OFF)
-        );
+        ).withName("StowIntake");
     }
 
     public Command stowFeed() {
         return Commands.parallel(
                 slide.toGoalHold(IntakeSlide.Goal.STOW_FEED),
                 rollers.toGoal(IntakeRollers.Goal.INTAKE)
-        );
+        ).withName("StowFeedIntake");
     }
 }
