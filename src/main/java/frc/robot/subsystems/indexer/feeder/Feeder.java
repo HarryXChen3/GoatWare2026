@@ -4,15 +4,15 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
+import frc.robot.utils.commands.SubsystemExt;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
 
-public class Feeder extends SubsystemBase {
+public class Feeder extends SubsystemExt {
     protected static final String LogKey = "Feeder";
     private static final double VelocityToleranceRotsPerSec = 0.1;
 

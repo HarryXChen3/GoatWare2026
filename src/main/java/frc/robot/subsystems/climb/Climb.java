@@ -5,16 +5,16 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.SimConstants;
+import frc.robot.utils.commands.SubsystemExt;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
 
-public class Climb extends SubsystemBase {
+public class Climb extends SubsystemExt {
     protected static final String LogKey = "Climb";
     private static final double PositionToleranceRots = 0.05;
     private static final double VelocityToleranceRotsPerSec = 0.1;

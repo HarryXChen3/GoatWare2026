@@ -29,13 +29,13 @@ public class SwerveConstants {
     public static final int ModuleCount = 4;
     public static final SwerveConfig Config = new SwerveConfig(
             HardwareConstants.CANBus.CANIVORE,
-            0.048819,
-            6.746031746031747,
-            150.0 / 7.0,
-            50.0 / 17.0,
-            Units.inchesToMeters(22.75),
-            Units.inchesToMeters(22.75),
-            Units.feetToMeters(15.0),
+            0.0508,
+            7.03,
+            287.0 / 11.0,
+            54.0 / 25.0,
+            Units.inchesToMeters(21.75),
+            Units.inchesToMeters(21.25),
+            Units.feetToMeters(14.36),
             4 * Math.PI,
             6 * Math.PI,
             Translation2d.kZero
@@ -110,7 +110,7 @@ public class SwerveConstants {
         }
 
         private static final Slot0Configs DriveGains = new Slot0Configs()
-                .withKS(2.2557).withKV(0).withKA(3.1912)
+                .withKS(4).withKV(0).withKA(5.55)
                 .withKP(30).withKD(0);
 
         private static final Slot0Configs SteerGains = new Slot0Configs()

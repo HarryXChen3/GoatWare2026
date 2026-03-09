@@ -3,13 +3,12 @@ package frc.robot.subsystems.indexer.hopper;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.FunctionalCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
+import frc.robot.utils.commands.SubsystemExt;
 import org.littletonrobotics.junction.Logger;
 
-public class Hopper extends SubsystemBase {
+public class Hopper extends SubsystemExt {
     protected static final String LogKey = "Hopper";
 
     public enum ControlMode {
