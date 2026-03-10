@@ -15,13 +15,15 @@ import frc.robot.subsystems.superstructure.StaticShot;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.utils.Container;
 import frc.robot.utils.commands.LoggedTrigger;
+import frc.robot.utils.subsystems.VirtualSubsystem;
 import frc.robot.utils.teleop.SwerveSpeed;
+import org.littletonrobotics.junction.Logger;
 
 import java.util.function.Supplier;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
-public class ShootCommands {
+public class ShootCommands extends VirtualSubsystem {
     protected static final String LogKey = "ShootCommands";
     private static final SwerveSpeed.Speeds ShootAndScootSpeeds = SwerveSpeed.Speeds.SHOOT_AND_SCOOT;
     private static final double ShootAndScootTolerance = 0.25;
@@ -51,6 +53,11 @@ public class ShootCommands {
         this.indexer = indexer;
         this.fuelState = fuelState;
         this.superstructure = superstructure;
+    }
+
+    @Override
+    public void periodic() {
+        Logger.recordOutput(LogKey + "/Target", getTarget(swerve.getPose()));
     }
 
     public static double linearSpeed(final ChassisSpeeds speeds) {

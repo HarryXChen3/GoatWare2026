@@ -201,8 +201,10 @@ public class Autos {
         final AutoTrajectory upAndAtEm_0 = routine.trajectory("UpAndAtEm_0");
         final AutoTrajectory upAndAtEm_1 = routine.trajectory("UpAndAtEm_1");
 
-        routine.active().onTrue(runStartingTrajectory(upAndAtEm_0));
-
+        routine.active().onTrue(parallel(
+                runStartingTrajectory(upAndAtEm_0),
+                runOnce(fuelState::setSimFuelPreloaded)
+        ));
         upAndAtEm_0.active().whileTrue(
                 intakeFromTrench(
                         staticParametersFromFinalPose(upAndAtEm_0),
@@ -237,7 +239,10 @@ public class Autos {
         final AutoTrajectory downAndAtEm_0 = routine.trajectory("DownAndAtEm_0");
         final AutoTrajectory downAndAtEm_1 = routine.trajectory("DownAndAtEm_1");
 
-        routine.active().onTrue(runStartingTrajectory(downAndAtEm_0));
+        routine.active().onTrue(parallel(
+                runStartingTrajectory(downAndAtEm_0),
+                runOnce(fuelState::setSimFuelPreloaded)
+        ));
 
         downAndAtEm_0.active().whileTrue(
                 intakeFromTrench(

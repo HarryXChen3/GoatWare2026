@@ -22,10 +22,10 @@ public class FieldConstants {
     public static final double RED_FERRY_X_BOUNDARY = RED_HUB_POSE.getX();
 
     public static final double BLUE_FERRY_LEFT_Y_BOUNDARY = (FIELD_WIDTH_Y_METERS / 2) - Units.inchesToMeters(12);
-    public static final double RED_FERRY_LEFT_Y_BOUNDARY = BLUE_FERRY_LEFT_Y_BOUNDARY;
-
     public static final double BLUE_FERRY_RIGHT_Y_BOUNDARY = (FIELD_WIDTH_Y_METERS / 2) + Units.inchesToMeters(12);
-    public static final double RED_FERRY_RIGHT_Y_BOUNDARY = BLUE_FERRY_RIGHT_Y_BOUNDARY;
+
+    public static final double RED_FERRY_LEFT_Y_BOUNDARY = BLUE_FERRY_RIGHT_Y_BOUNDARY;
+    public static final double RED_FERRY_RIGHT_Y_BOUNDARY = BLUE_FERRY_LEFT_Y_BOUNDARY;
 
     public static final Pose2d BLUE_FERRY_LEFT = new Pose2d(2, 2, Rotation2d.kZero);
     public static final Pose2d BLUE_FERRY_RIGHT = new Pose2d(2, 6, Rotation2d.kZero);

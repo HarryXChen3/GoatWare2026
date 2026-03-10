@@ -24,6 +24,7 @@ import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.utils.Container;
 import frc.robot.utils.commands.CommandsExt;
 import frc.robot.utils.commands.LoggedTrigger;
+import frc.robot.utils.commands.RobotModeLoggedTriggers;
 import frc.robot.utils.control.DeltaTime;
 import frc.robot.utils.subsystems.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
@@ -34,6 +35,7 @@ import java.util.function.Function;
 public class FuelState extends VirtualSubsystem {
     protected static final String LogKey = "FuelState";
     private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
+    private final LoggedTrigger teleopEnabled = RobotModeLoggedTriggers.teleop(group);
 
     private final DeltaTime deltaTime;
     private final Constants.RobotMode mode;
@@ -85,6 +87,7 @@ public class FuelState extends VirtualSubsystem {
 
                     return false;
                 });
+
                 configureSimTriggers();
                 setSimFuelCount(simFuelCount);
             }
@@ -120,6 +123,10 @@ public class FuelState extends VirtualSubsystem {
         }
     }
 
+    public void setSimFuelPreloaded() {
+        setSimFuelCount(8);
+    }
+
     private void configureStateTriggers() {
         intake.isIntaking.and(hasFuel.negate())
                 .whileTrue(CommandsExt.defaultCommand(indexer.toFeed()));
@@ -127,6 +134,8 @@ public class FuelState extends VirtualSubsystem {
 
     private void configureSimTriggers() {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
+
+        teleopEnabled.onTrue(Commands.runOnce(() -> setSimFuelCount(500)));
 
         final double fuelIntakePerSecond = 10;
         intake.isIntaking.whileTrue(setInterval(1 / fuelIntakePerSecond, () -> simFuelCount++));
