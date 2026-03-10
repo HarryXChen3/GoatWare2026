@@ -157,9 +157,9 @@ public class Robot extends LoggedRobot {
     private final LoggedTrigger disabled = RobotModeLoggedTriggers.disabled(group);
     private final LoggedTrigger teleopEnabled = RobotModeLoggedTriggers.teleop(group);
     private final LoggedTrigger autonomousEnabled = RobotModeLoggedTriggers.autonomous(group);
-    private final LoggedTrigger endgameTrigger = group.t("endgame", () -> DriverStation.getMatchTime() <= 20)
+    private final LoggedTrigger endgameTrigger = group.t("Endgame", () -> DriverStation.getMatchTime() <= 20)
             .and(DriverStation::isFMSAttached)
-            .and(RobotModeTriggers.teleop());
+            .and(teleopEnabled);
 
     public Robot() {
         if ((RobotBase.isReal() && Constants.CURRENT_MODE != Constants.RobotMode.REAL) ||
@@ -348,8 +348,8 @@ public class Robot extends LoggedRobot {
         autonomousEnabled.or(teleopEnabled).onTrue(intake.deploy());
 
         endgameTrigger.onTrue(ControllerUtils.rumbleForDurationCommand(
-                driverController.getHID(), GenericHID.RumbleType.kBothRumble, 0.5, 1)
-        );
+                driverController.getHID(), GenericHID.RumbleType.kBothRumble, 0.5, 1
+        ));
         disabled.onTrue(swerve.stopCommand());
     }
 

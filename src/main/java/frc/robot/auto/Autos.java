@@ -278,7 +278,7 @@ public class Autos {
         final AutoTrajectory catchMeIfYouCan = routine.trajectory("CatchMeIfYouCan");
 
         final Supplier<ShotParameters> catchParameters = () -> new ShotParameters(
-                new ShotParameters.Shooter(22.5, 0.02),
+                new ShotParameters.Shooter(22.5, 0.014),
                 Rotation2d.kZero,
                 0
         );
