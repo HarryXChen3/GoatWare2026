@@ -125,7 +125,7 @@ public class Phoenix6Utils {
             // use longer timeout when in sim
             Phoenix6Utils.reportIfNotOk(
                     talonFX,
-                    configurator.refresh(configuration, SimConstants.CTRE.CONFIG_TIMEOUT_SECONDS)
+                    configurator.refresh(configuration, SimConstants.CTRE.ConfigTimeoutSeconds)
             );
         }
 

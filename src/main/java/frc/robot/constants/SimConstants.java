@@ -8,19 +8,18 @@ import edu.wpi.first.math.util.Units;
 
 public interface SimConstants {
     // Assume 2mOhm resistance for voltage drop calculation
-    double MOTOR_RESISTANCE = 0.002;
+    double MotorResistanceOhms = 0.002;
 
     interface CTRE {
-        boolean DISABLE_NEUTRAL_MODE_IN_SIM = false;
-        double CONFIG_TIMEOUT_SECONDS = 0.2;
+        double ConfigTimeoutSeconds = 0.2;
     }
 
     interface Turret {
-        Translation3d ORIGIN_OFFSET = new Translation3d(-0.127, 0, 0.386);
+        Translation3d OriginOffset = new Translation3d(-0.127, 0, 0.386);
     }
 
     interface Hood {
-        Translation3d TURRET_OFFSET = new Translation3d(0.121, 0, 0.054);
+        Translation3d TurretOffset = new Translation3d(0.121, 0, 0.054);
         Transform3d FuelExitOffset = new Transform3d(
                 Units.inchesToMeters(-4.604),
                 0,
@@ -35,8 +34,8 @@ public interface SimConstants {
     }
 
     interface IntakeSlide {
-        double DrivingGearDiameter = Units.inchesToMeters(1);
-        double SlideRotationsToLinearDistanceMetersRatio = 2 * Math.PI * (DrivingGearDiameter / 2);
+        double DrivingGearDiameterMeters = Units.inchesToMeters(1);
+        double SlideRotationsToLinearDistanceMetersRatio = 2 * Math.PI * (DrivingGearDiameterMeters / 2);
 
         Pose3d ExtendedPose = Pose3d.kZero;
         Pose3d RetractedPose = new Pose3d(
@@ -70,6 +69,6 @@ public interface SimConstants {
                 Rotation3d.kZero
         );
 
-        double Stage0MaxExtension = Units.inchesToMeters(7.652);
+        double Stage0MaxExtensionMeters = Units.inchesToMeters(7.652);
     }
 }

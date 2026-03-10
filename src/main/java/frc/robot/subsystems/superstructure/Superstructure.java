@@ -116,13 +116,13 @@ public class Superstructure extends VirtualSubsystem {
 
     public Pose3d[] getComponentPoses() {
         final Pose3d turretPose = new Pose3d(
-                SimConstants.Turret.ORIGIN_OFFSET,
+                SimConstants.Turret.OriginOffset,
                 new Rotation3d(turret.getPosition())
         );
 
         final Pose3d hoodPose = turretPose
                 .plus(new Transform3d(
-                        SimConstants.Hood.TURRET_OFFSET,
+                        SimConstants.Hood.TurretOffset,
                         new Rotation3d(0, hood.getPosition().getRadians(), 0)
                 ));
 

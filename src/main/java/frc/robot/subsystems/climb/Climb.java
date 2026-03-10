@@ -126,7 +126,7 @@ public class Climb extends SubsystemExt {
         final double totalExtensionDistance = climbExtended.getTranslation()
                 .getDistance(climbRetracted.getTranslation());
 
-        final double stage0MaxExtension = SimConstants.Climb.Stage0MaxExtension;
+        final double stage0MaxExtension = SimConstants.Climb.Stage0MaxExtensionMeters;
         final double stage0ExtensionRatio = Math.min(extensionMeters / stage0MaxExtension, 1);
         final double stage1ExtensionRatio = Math.max(extensionMeters - stage0MaxExtension, 0)
                 / totalExtensionDistance;
