@@ -90,7 +90,7 @@ public class Climb extends SubsystemExt {
 
     @Override
     public void periodic() {
-        final double intakePeriodicUpdateStart = Timer.getFPGATimestamp();
+        final double climbPeriodicUpdateStart = Timer.getFPGATimestamp();
 
         climbIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
@@ -110,7 +110,7 @@ public class Climb extends SubsystemExt {
 
         Logger.recordOutput(
                 LogKey + "/PeriodicIOPeriodMs",
-                Units.secondsToMilliseconds(Timer.getFPGATimestamp() - intakePeriodicUpdateStart)
+                Units.secondsToMilliseconds(Timer.getFPGATimestamp() - climbPeriodicUpdateStart)
         );
     }
 

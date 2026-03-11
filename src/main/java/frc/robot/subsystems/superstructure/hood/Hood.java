@@ -85,7 +85,7 @@ public class Hood extends SubsystemExt {
 
     @Override
     public void periodic() {
-        final double shooterPeriodicUpdateStart = Timer.getFPGATimestamp();
+        final double hoodPeriodicUpdateStart = Timer.getFPGATimestamp();
 
         hoodIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
@@ -104,7 +104,7 @@ public class Hood extends SubsystemExt {
 
         Logger.recordOutput(
                 LogKey + "/PeriodicIOPeriodMs",
-                Units.secondsToMilliseconds(Timer.getFPGATimestamp() - shooterPeriodicUpdateStart)
+                Units.secondsToMilliseconds(Timer.getFPGATimestamp() - hoodPeriodicUpdateStart)
         );
     }
 

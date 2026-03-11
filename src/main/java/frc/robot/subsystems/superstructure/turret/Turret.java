@@ -141,8 +141,45 @@ public class Turret extends SubsystemExt {
         return desiredGoal == currentGoal;
     }
 
+    private double optimizeWrap(final double targetPositionRots) {
+        final double forwardLimitRots = constants.forwardLimitRots();
+        final double reverseLimitRots = constants.reverseLimitRots();
+        final double currentPositionRots = inputs.motorPositionRots;
+
+        final double wrappedPositionRots = currentPositionRots + MathUtil.inputModulus(
+                targetPositionRots - currentPositionRots,
+                -0.5,
+                0.5
+        );
+
+        if (wrappedPositionRots >= reverseLimitRots && wrappedPositionRots <= forwardLimitRots) {
+            return wrappedPositionRots;
+        }
+
+        final double fullRotationForward = wrappedPositionRots + 1.0;
+        final double fullRotationBackward = wrappedPositionRots - 1.0;
+
+        final boolean isForwardWithinBound = fullRotationForward >= reverseLimitRots
+                && fullRotationForward <= forwardLimitRots;
+        final boolean isBackwardWithinBound = fullRotationBackward >= reverseLimitRots
+                && fullRotationBackward <= forwardLimitRots;
+
+        if (isForwardWithinBound && isBackwardWithinBound) {
+            final double forwardTravelRots = Math.abs(fullRotationForward - currentPositionRots);
+            final double backwardTravelRots = Math.abs(fullRotationBackward - currentPositionRots);
+
+            return forwardTravelRots <= backwardTravelRots ? fullRotationForward : fullRotationBackward;
+        } else if (isForwardWithinBound) {
+            return fullRotationForward;
+        } else if (isBackwardWithinBound) {
+            return fullRotationBackward;
+        }
+
+        return MathUtil.clamp(wrappedPositionRots, reverseLimitRots, forwardLimitRots);
+    }
+
     private void setPositionImpl(final double positionRots, final double velocityRotsPerSec) {
-        positionSetpointRots = positionRots;
+        positionSetpointRots = optimizeWrap(positionRots);
         velocitySetpointRotsPerSec = velocityRotsPerSec;
         turretIO.trackTurretPosition(positionSetpointRots, velocityRotsPerSec);
     }

@@ -135,7 +135,7 @@ public class IntakeSlide extends SubsystemExt {
 
     @Override
     public void periodic() {
-        final double intakePeriodicUpdateStart = Timer.getFPGATimestamp();
+        final double intakeSlidePeriodicUpdateStart = Timer.getFPGATimestamp();
 
         intakeSlideIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
@@ -165,7 +165,7 @@ public class IntakeSlide extends SubsystemExt {
 
         Logger.recordOutput(
                 LogKey + "/PeriodicIOPeriodMs",
-                Units.secondsToMilliseconds(Timer.getFPGATimestamp() - intakePeriodicUpdateStart)
+                Units.secondsToMilliseconds(Timer.getFPGATimestamp() - intakeSlidePeriodicUpdateStart)
         );
     }
 
