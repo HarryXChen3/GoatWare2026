@@ -156,9 +156,10 @@ public class Robot extends LoggedRobot {
     private final LoggedTrigger disabled = RobotModeLoggedTriggers.disabled(group);
     private final LoggedTrigger teleopEnabled = RobotModeLoggedTriggers.teleop(group);
     private final LoggedTrigger autonomousEnabled = RobotModeLoggedTriggers.autonomous(group);
-    private final LoggedTrigger endgameTrigger = group.t("Endgame", () -> DriverStation.getMatchTime() <= 20)
-            .and(DriverStation::isFMSAttached)
-            .and(teleopEnabled);
+    private final LoggedTrigger enabled = RobotModeLoggedTriggers.enabled(group);
+
+    private final LoggedTrigger hubActive =
+            group.t("HubActive", () -> AllianceShift.get().hubStatus() == AllianceShift.HubStatus.ACTIVE);
 
     public Robot() {
         if ((RobotBase.isReal() && Constants.CURRENT_MODE != Constants.RobotMode.REAL) ||
@@ -344,11 +345,13 @@ public class Robot extends LoggedRobot {
     public void configureStateTriggers() {
         teleopEnabled.whileTrue(CommandsExt.defaultCommand(shootCommands.trackTarget()));
 
-        autonomousEnabled.or(teleopEnabled).onTrue(intake.deploy());
+        enabled.onTrue(intake.deploy());
+        enabled.onTrue(shooter.toGoal(Shooter.Goal.IDLE));
 
-        endgameTrigger.onTrue(ControllerUtils.rumbleForDurationCommand(
+        hubActive.onTrue(ControllerUtils.rumbleForDurationCommand(
                 driverController.getHID(), GenericHID.RumbleType.kBothRumble, 0.5, 1
         ));
+
         disabled.onTrue(swerve.stopCommand());
     }
 
