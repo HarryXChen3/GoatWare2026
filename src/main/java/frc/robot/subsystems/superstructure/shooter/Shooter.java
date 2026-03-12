@@ -123,6 +123,10 @@ public class Shooter extends SubsystemExt {
         setVelocityImpl(goal.velocityRotsPerSec);
     }
 
+    public Command toInstantGoal(final Goal goal) {
+        return runOnce(() -> setGoalImpl(goal));
+    }
+
     public Command toGoal(final Goal goal) {
         return startEnd(
                 () -> setGoalImpl(goal),

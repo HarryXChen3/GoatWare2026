@@ -345,8 +345,9 @@ public class Robot extends LoggedRobot {
     public void configureStateTriggers() {
         teleopEnabled.whileTrue(CommandsExt.defaultCommand(shootCommands.trackTarget()));
 
-        enabled.onTrue(intake.deploy());
-        enabled.onTrue(shooter.toGoal(Shooter.Goal.IDLE));
+        enabled
+                .onTrue(intake.deploy())
+                .onTrue(shooter.toInstantGoal(Shooter.Goal.IDLE));
 
         hubActive.onTrue(ControllerUtils.rumbleForDurationCommand(
                 driverController.getHID(), GenericHID.RumbleType.kBothRumble, 0.5, 1

@@ -32,7 +32,11 @@ public class Intake {
         return Commands.parallel(
                 intaking(),
                 slide.toInstantGoal(IntakeSlide.Goal.INTAKE),
-                rollers.toGoal(IntakeRollers.Goal.INTAKE)
+                Commands.sequence(
+                        Commands.waitUntil(slide.atGoal(IntakeSlide.Goal.INTAKE))
+                                .withTimeout(4),
+                        rollers.toGoal(IntakeRollers.Goal.INTAKE)
+                )
         ).withName("Intaking");
     }
 

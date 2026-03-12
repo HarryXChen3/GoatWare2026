@@ -173,6 +173,14 @@ public class IntakeSlide extends SubsystemExt {
         return desiredGoal == currentGoal;
     }
 
+    private boolean atGoal(final InternalGoal goal) {
+        return currentGoal == goal;
+    }
+
+    public LoggedTrigger atGoal(final Goal goal) {
+        return group.t("AtGoal", () -> atGoal(InternalGoal.fromGoal(goal)));
+    }
+
     public Pose3d[] getComponentPoses() {
         final Pose3d slideExtended = SimConstants.IntakeSlide.ExtendedPose;
         final Pose3d slideRetracted = SimConstants.IntakeSlide.RetractedPose;
