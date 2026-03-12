@@ -23,7 +23,7 @@ public class Superstructure extends VirtualSubsystem {
     protected static final String LogKey = "Superstructure";
 
     public enum Goal {
-        STOW(Hood.Goal.STOW, Shooter.Goal.IDLE, Turret.Goal.IDLE),
+        STOW(Hood.Goal.STOW, Shooter.Goal.IDLE, Turret.Goal.STOW),
         CLIMB(Hood.Goal.STOW, Shooter.Goal.OFF, Turret.Goal.CLIMB);
 
         public final Hood.Goal hoodGoal;

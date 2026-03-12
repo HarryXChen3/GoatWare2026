@@ -22,7 +22,7 @@ public class Turret extends SubsystemExt {
     private static final double VelocityToleranceRotsPerSec = 0.25;
 
     public enum Goal {
-        IDLE(0),
+        STOW(0),
         CLIMB(0.5);
 
         public final double positionRots;
@@ -34,7 +34,7 @@ public class Turret extends SubsystemExt {
 
     private enum InternalGoal {
         NONE,
-        IDLE(Goal.IDLE),
+        STOW(Goal.STOW),
         CLIMB(Goal.CLIMB),
         TRACKING;
 
@@ -67,7 +67,7 @@ public class Turret extends SubsystemExt {
     private final TurretIO turretIO;
     private final TurretIOInputsAutoLogged inputs;
 
-    private InternalGoal desiredGoal = InternalGoal.IDLE;
+    private InternalGoal desiredGoal = InternalGoal.STOW;
     private InternalGoal currentGoal = InternalGoal.NONE;
 
     private double positionSetpointRots;
@@ -194,7 +194,7 @@ public class Turret extends SubsystemExt {
     public Command toGoal(final Goal goal) {
         return startEnd(
                 () -> setGoalImpl(goal),
-                () -> setGoalImpl(Goal.IDLE)
+                () -> setGoalImpl(Goal.STOW)
         );
     }
 
@@ -209,7 +209,7 @@ public class Turret extends SubsystemExt {
         return instantRunEnd(
                 () -> desiredGoal = InternalGoal.TRACKING,
                 () -> setPositionImpl(positionSupplier.get().getRotations(), velocitySupplier.getAsDouble()),
-                () -> setGoalImpl(Goal.IDLE)
+                () -> setGoalImpl(Goal.STOW)
         );
     }
 

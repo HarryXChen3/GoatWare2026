@@ -17,7 +17,7 @@ public class Feeder extends SubsystemExt {
     private static final double VelocityToleranceRotsPerSec = 0.1;
 
     public enum Goal {
-        IDLE(1.2),
+        OFF(0),
         FEED(5);
 
         public final double velocityRotsPerSec;
@@ -29,7 +29,7 @@ public class Feeder extends SubsystemExt {
 
     private enum InternalGoal {
         NONE,
-        IDLE(Goal.IDLE),
+        OFF(Goal.OFF),
         FEED(Goal.FEED);
 
         public static final HashMap<Goal, InternalGoal> GoalToInternal = new HashMap<>();
@@ -59,7 +59,7 @@ public class Feeder extends SubsystemExt {
     private final FeederIO feederIO;
     private final FeederIOInputsAutoLogged inputs;
 
-    private InternalGoal desiredGoal = InternalGoal.IDLE;
+    private InternalGoal desiredGoal = InternalGoal.OFF;
     private InternalGoal currentGoal = InternalGoal.NONE;
 
     private double velocitySetpointRotsPerSec;
@@ -128,7 +128,7 @@ public class Feeder extends SubsystemExt {
     public Command toGoal(final Goal goal) {
         return startEnd(
                 () -> setGoalImpl(goal),
-                () -> setGoalImpl(Goal.IDLE)
+                () -> setGoalImpl(Goal.OFF)
         );
     }
 }
