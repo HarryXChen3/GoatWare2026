@@ -7,8 +7,9 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
-import frc.robot.utils.commands.LoggedTrigger;
-import frc.robot.utils.commands.SubsystemExt;
+import frc.robot.utils.commands.ext.CommandsExt;
+import frc.robot.utils.commands.trigger.LoggedTrigger;
+import frc.robot.utils.commands.ext.SubsystemExt;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
@@ -142,7 +143,7 @@ public class Hood extends SubsystemExt {
     }
 
     public Command runGoal(final Goal goal) {
-        return startEnd(() -> setGoalImpl(goal), () -> {});
+        return startIdle(() -> setGoalImpl(goal));
     }
 
     public Command toPosition(final DoubleSupplier positionRotsSupplier) {

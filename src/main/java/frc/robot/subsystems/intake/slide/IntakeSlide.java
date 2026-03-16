@@ -10,8 +10,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.SimConstants;
-import frc.robot.utils.commands.LoggedTrigger;
-import frc.robot.utils.commands.SubsystemExt;
+import frc.robot.utils.commands.trigger.LoggedTrigger;
+import frc.robot.utils.commands.ext.SubsystemExt;
 import frc.robot.utils.control.DeltaTime;
 import org.littletonrobotics.junction.Logger;
 

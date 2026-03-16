@@ -19,7 +19,7 @@ import frc.robot.subsystems.superstructure.ShotParameters;
 import frc.robot.subsystems.superstructure.StaticShot;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.PhotonVision;
-import frc.robot.utils.commands.LoggedTrigger;
+import frc.robot.utils.commands.trigger.LoggedTrigger;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.function.Supplier;
