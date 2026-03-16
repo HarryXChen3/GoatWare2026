@@ -380,15 +380,15 @@ public class Robot extends LoggedRobot {
 
     public void configureButtonBindings(final EventLoop teleopEventLoop) {
         driverController.rightBumper(teleopEventLoop)
-                .whileTrue(Commands.startEnd(
-                        () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.FAST),
-                        () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
+                .whileTrue(SwerveSpeed.toSwerveSpeed(
+                        SwerveSpeed.Speeds.FAST,
+                        SwerveSpeed.Speeds.NORMAL
                 ).withName("SwerveSpeedFast"));
 
         driverController.leftBumper(teleopEventLoop)
-                .whileTrue(Commands.startEnd(
-                        () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.SLOW),
-                        () -> SwerveSpeed.setSwerveSpeed(SwerveSpeed.Speeds.NORMAL)
+                .whileTrue(SwerveSpeed.toSwerveSpeed(
+                        SwerveSpeed.Speeds.SLOW,
+                        SwerveSpeed.Speeds.NORMAL
                 ).withName("SwerveSpeedSlow"));
 
         driverController.a(teleopEventLoop)

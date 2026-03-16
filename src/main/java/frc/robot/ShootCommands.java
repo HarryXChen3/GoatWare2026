@@ -13,7 +13,6 @@ import frc.robot.subsystems.superstructure.MovingTOFShot;
 import frc.robot.subsystems.superstructure.ShotParameters;
 import frc.robot.subsystems.superstructure.StaticShot;
 import frc.robot.subsystems.superstructure.Superstructure;
-import frc.robot.utils.Container;
 import frc.robot.utils.commands.LoggedTrigger;
 import frc.robot.utils.subsystems.VirtualSubsystem;
 import frc.robot.utils.teleop.SwerveSpeed;
@@ -176,7 +175,6 @@ public class ShootCommands extends VirtualSubsystem {
                     case HUB, FERRY -> true;
                     case NONE_FERRY_BLOCKED -> false;
                 });
-        final Container<SwerveSpeed.Speeds> originalSpeeds = Container.empty();
         final LoggedTrigger swerveReady = group.t(
                 "SwerveReady",
                 () -> linearSpeed(swerve.getFieldRelativeSpeeds())
@@ -200,13 +198,7 @@ public class ShootCommands extends VirtualSubsystem {
                         .onlyIf(fuelState.hasFuel)
                         .onlyWhile(fuelState.hasFuel
                                 .or(intake.isIntaking)),
-                Commands.sequence(
-                        originalSpeeds.setCommand(SwerveSpeed.getSwerveSpeed()),
-                        Commands.startEnd(
-                                () -> SwerveSpeed.setSwerveSpeed(ShootAndScootSpeeds),
-                                () -> SwerveSpeed.setSwerveSpeed(originalSpeeds.get())
-                        )
-                ),
+                SwerveSpeed.toSwerveSpeed(ShootAndScootSpeeds),
                 superstructure.runParameters(
                         MovingTOFShot.parametersSupplier(
                                 swerve::getPose,
