@@ -77,7 +77,7 @@ public class IntakeRollers extends SubsystemExt {
 
     @Override
     public void periodic() {
-        final double intakeRollerPeriodicUpdateStart = Timer.getFPGATimestamp();
+        final double intakeRollersPeriodicUpdateStart = Timer.getFPGATimestamp();
 
         intakeRollersIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
@@ -98,7 +98,7 @@ public class IntakeRollers extends SubsystemExt {
 
         Logger.recordOutput(
                 LogKey + "/PeriodicIOPeriodMs",
-                Units.secondsToMilliseconds(Timer.getFPGATimestamp() - intakeRollerPeriodicUpdateStart)
+                Units.secondsToMilliseconds(Timer.getFPGATimestamp() - intakeRollersPeriodicUpdateStart)
         );
     }
 
