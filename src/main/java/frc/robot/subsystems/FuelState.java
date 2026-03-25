@@ -19,7 +19,7 @@ import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.superstructure.MovingTOFShot;
+import frc.robot.subsystems.superstructure.params.MovingTOFShot;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.utils.Container;
 import frc.robot.utils.commands.ext.CommandsExt;

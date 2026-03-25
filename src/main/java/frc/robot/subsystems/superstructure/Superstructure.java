@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.superstructure.hood.Hood;
+import frc.robot.subsystems.superstructure.params.ShotParameters;
 import frc.robot.subsystems.superstructure.shooter.Shooter;
 import frc.robot.subsystems.superstructure.turret.Turret;
 import frc.robot.utils.Container;

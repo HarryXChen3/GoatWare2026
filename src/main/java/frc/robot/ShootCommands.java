@@ -9,9 +9,7 @@ import frc.robot.subsystems.FuelState;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.superstructure.MovingTOFShot;
-import frc.robot.subsystems.superstructure.ShotParameters;
-import frc.robot.subsystems.superstructure.StaticShot;
+import frc.robot.subsystems.superstructure.params.*;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.utils.commands.trigger.LoggedTrigger;
 import frc.robot.utils.subsystems.VirtualSubsystem;
@@ -41,6 +39,14 @@ public class ShootCommands extends VirtualSubsystem {
     private final FuelState fuelState;
     private final Superstructure superstructure;
 
+    private final Supplier<Pose2d> targetPoseSupplier;
+
+    private final ShotProvider<ShotProvider.Kind.Static> staticShotProvider;
+    private final Supplier<ShotParameters> staticShot;
+
+    private final ShotProvider<ShotProvider.Kind.Moving> movingShotProvider;
+    private final Supplier<ShotParameters> movingShot;
+
     public ShootCommands(
             final Swerve swerve,
             final Intake intake,
@@ -53,6 +59,24 @@ public class ShootCommands extends VirtualSubsystem {
         this.indexer = indexer;
         this.fuelState = fuelState;
         this.superstructure = superstructure;
+
+        this.targetPoseSupplier = getTargetPoseSupplier();
+
+        this.staticShotProvider = new StaticShot();
+        this.staticShot = staticShotProvider.parametersSupplier(
+                swerve::getPose,
+                superstructure::getTurretTranslation,
+                swerve::getRobotRelativeSpeeds,
+                targetPoseSupplier
+        );
+
+        this.movingShotProvider = new MovingTOFShot();
+        this.movingShot = movingShotProvider.parametersSupplier(
+                swerve::getPose,
+                superstructure::getTurretTranslation,
+                swerve::getRobotRelativeSpeeds,
+                targetPoseSupplier
+        );
     }
 
     @Override
@@ -115,14 +139,13 @@ public class ShootCommands extends VirtualSubsystem {
     }
 
     public Command trackTarget() {
-        final Supplier<Pose2d> targetSupplier = getTargetPoseSupplier();
-        final Supplier<ShotParameters> staticParametersSupplier = StaticShot.parametersSupplier(
+        final Supplier<ShotParameters> staticParametersSupplier = staticShotProvider.parametersSupplier(
                 swerve::getPose,
                 superstructure::getTurretTranslation,
                 swerve::getRobotRelativeSpeeds,
-                targetSupplier
+                targetPoseSupplier
         );
-        final Supplier<ShotParameters> movingTOFParametersSupplier = MovingTOFShot.parametersSupplier(
+        final Supplier<ShotParameters> movingTOFParametersSupplier = movingShotProvider.parametersSupplier(
                 swerve::getPose,
                 superstructure::getTurretTranslation,
                 () -> {
@@ -132,7 +155,7 @@ public class ShootCommands extends VirtualSubsystem {
                             .div(linearSpeed)
                             .times(Math.min(linearSpeed, ShootAndScootSpeeds.getTranslationSpeed()));
                 },
-                targetSupplier
+                targetPoseSupplier
         );
 
         return superstructure.runParametersHoodStowed(
@@ -163,20 +186,12 @@ public class ShootCommands extends VirtualSubsystem {
                         .onlyIf(fuelState.hasFuel)
                         .onlyWhile(fuelState.hasFuel
                                 .or(intake.isIntaking)),
-                superstructure.runParameters(
-                        StaticShot.parametersSupplier(
-                                swerve::getPose,
-                                superstructure::getTurretTranslation,
-                                swerve::getRobotRelativeSpeeds,
-                                targetPoseSupplier
-                        )
-                ),
+                superstructure.runParameters(staticShot),
                 swerve.runWheelXCommand()
         ).withName("StopAndShoot");
     }
 
     public Command shoot() {
-        final Supplier<Pose2d> targetSupplier = getTargetPoseSupplier();
         final LoggedTrigger targetValid = group.t(
                 "TargetValid",
                 () -> switch (getTarget(swerve.getPose())) {
@@ -207,14 +222,7 @@ public class ShootCommands extends VirtualSubsystem {
                         .onlyWhile(fuelState.hasFuel
                                 .or(intake.isIntaking)),
                 SwerveSpeed.toSwerveSpeed(ShootAndScootSpeeds),
-                superstructure.runParameters(
-                        MovingTOFShot.parametersSupplier(
-                                swerve::getPose,
-                                superstructure::getTurretTranslation,
-                                swerve::getRobotRelativeSpeeds,
-                                targetSupplier
-                        )
-                )
+                superstructure.runParameters(movingShot)
         ).withName("Shoot");
     }
 }
