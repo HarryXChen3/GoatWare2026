@@ -7,7 +7,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
-import frc.robot.utils.commands.ext.CommandsExt;
 import frc.robot.utils.commands.trigger.LoggedTrigger;
 import frc.robot.utils.commands.ext.SubsystemExt;
 import org.littletonrobotics.junction.Logger;
@@ -63,13 +62,16 @@ public class Hood extends SubsystemExt {
     private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
 
     private final HoodIO hoodIO;
-    private final HoodIOInputsAutoLogged inputs;
+    private final HoodIOInputsAutoLogged inputs = new HoodIOInputsAutoLogged();
 
     private InternalGoal desiredGoal = InternalGoal.STOW;
-    private InternalGoal currentGoal = InternalGoal.NONE;
-
     private double positionSetpointRots;
 
+    public final LoggedTrigger atSetpoint = group.t(
+            "AtSetpoint",
+            () -> MathUtil.isNear(positionSetpointRots, inputs.pivotPositionRots, PositionToleranceRots)
+                    && MathUtil.isNear(0, inputs.pivotVelocityRotsPerSec, VelocityToleranceRotsPerSec)
+    );
     public final LoggedTrigger safeForTrench = atGoal(Hood.Goal.STOW);
 
     public Hood(final Constants.RobotMode mode, final HardwareConstants.HoodConstants constants) {
@@ -78,8 +80,6 @@ public class Hood extends SubsystemExt {
             case SIM -> new HoodIOSim(constants);
             case REPLAY, DISABLED -> new HoodIO() {};
         };
-
-        this.inputs = new HoodIOInputsAutoLogged();
 
         this.hoodIO.config();
     }
@@ -91,9 +91,8 @@ public class Hood extends SubsystemExt {
         hoodIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (MathUtil.isNear(positionSetpointRots, inputs.pivotPositionRots, PositionToleranceRots)
-                && MathUtil.isNear(0, inputs.pivotVelocityRotsPerSec, VelocityToleranceRotsPerSec)
-        ) {
+        final InternalGoal currentGoal;
+        if (atSetpoint()) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -101,6 +100,7 @@ public class Hood extends SubsystemExt {
 
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
         Logger.recordOutput(LogKey + "/CurrentGoal", currentGoal);
+        Logger.recordOutput(LogKey + "/AtSetpoint", atSetpoint);
         Logger.recordOutput(LogKey + "/PositionSetpointRots", positionSetpointRots);
 
         Logger.recordOutput(
@@ -114,11 +114,11 @@ public class Hood extends SubsystemExt {
     }
 
     public boolean atSetpoint() {
-        return desiredGoal == currentGoal;
+        return atSetpoint.getAsBoolean();
     }
 
     private boolean atGoal(final InternalGoal goal) {
-        return currentGoal == goal;
+        return desiredGoal == goal && atSetpoint();
     }
 
     public LoggedTrigger atGoal(final Goal goal) {

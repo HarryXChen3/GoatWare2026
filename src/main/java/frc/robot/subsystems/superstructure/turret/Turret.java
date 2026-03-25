@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.commands.ext.SubsystemExt;
+import frc.robot.utils.commands.trigger.LoggedTrigger;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
@@ -62,16 +63,29 @@ public class Turret extends SubsystemExt {
         }
     }
 
+    private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
     private final HardwareConstants.TurretConstants constants;
 
     private final TurretIO turretIO;
-    private final TurretIOInputsAutoLogged inputs;
+    private final TurretIOInputsAutoLogged inputs = new TurretIOInputsAutoLogged();
 
     private InternalGoal desiredGoal = InternalGoal.STOW;
-    private InternalGoal currentGoal = InternalGoal.NONE;
 
     private double positionSetpointRots;
     private double velocitySetpointRotsPerSec;
+
+    public final LoggedTrigger atSetpoint = group.t(
+            "AtSetpoint",
+            () -> MathUtil.isNear(
+                    positionSetpointRots,
+                    inputs.motorPositionRots,
+                    PositionToleranceRots
+            ) && MathUtil.isNear(
+                    velocitySetpointRotsPerSec,
+                    inputs.motorVelocityRotsPerSec,
+                    VelocityToleranceRotsPerSec
+            )
+    );
 
     public Turret(final Constants.RobotMode mode, final HardwareConstants.TurretConstants constants) {
         this.constants = constants;
@@ -80,8 +94,6 @@ public class Turret extends SubsystemExt {
             case SIM -> new TurretIOSim(constants);
             case REPLAY, DISABLED -> new TurretIO() {};
         };
-
-        this.inputs = new TurretIOInputsAutoLogged();
 
         this.turretIO.config();
         this.turretIO.updateInputs(inputs);
@@ -104,15 +116,8 @@ public class Turret extends SubsystemExt {
         turretIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (MathUtil.isNear(
-                positionSetpointRots,
-                inputs.motorPositionRots,
-                PositionToleranceRots
-        ) && MathUtil.isNear(
-                velocitySetpointRotsPerSec,
-                inputs.motorVelocityRotsPerSec,
-                VelocityToleranceRotsPerSec
-        )) {
+        final InternalGoal currentGoal;
+        if (atSetpoint()) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -120,6 +125,7 @@ public class Turret extends SubsystemExt {
 
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
         Logger.recordOutput(LogKey + "/CurrentGoal", currentGoal);
+        Logger.recordOutput(LogKey + "/AtSetpoint", atSetpoint);
         Logger.recordOutput(LogKey + "/PositionSetpointRots", positionSetpointRots);
         Logger.recordOutput(LogKey + "/VelocitySetpointRotsPerSec", velocitySetpointRotsPerSec);
 
@@ -138,7 +144,7 @@ public class Turret extends SubsystemExt {
     }
 
     public boolean atSetpoint() {
-        return desiredGoal == currentGoal;
+        return atSetpoint.getAsBoolean();
     }
 
     private double optimizeWrap(final double targetPositionRots) {

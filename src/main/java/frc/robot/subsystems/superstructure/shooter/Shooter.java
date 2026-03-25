@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.commands.ext.SubsystemExt;
+import frc.robot.utils.commands.trigger.LoggedTrigger;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
@@ -58,13 +59,22 @@ public class Shooter extends SubsystemExt {
         }
     }
 
+    private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
+
     private final ShooterIO shooterIO;
-    private final ShooterIOInputsAutoLogged inputs;
+    private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     private InternalGoal desiredGoal = InternalGoal.OFF;
-    private InternalGoal currentGoal = InternalGoal.NONE;
-
     private double velocitySetpointRotsPerSec;
+
+    public final LoggedTrigger atSetpoint = group.t(
+            "AtSetpoint",
+            () -> MathUtil.isNear(
+                    velocitySetpointRotsPerSec,
+                    inputs.masterVelocityRotsPerSec,
+                    VelocityToleranceRotsPerSec
+            )
+    );
 
     public Shooter(final Constants.RobotMode mode, final HardwareConstants.ShooterConstants constants) {
         this.shooterIO = switch (mode) {
@@ -72,8 +82,6 @@ public class Shooter extends SubsystemExt {
             case SIM -> new ShooterIOSim(constants);
             case REPLAY, DISABLED -> new ShooterIO() {};
         };
-
-        this.inputs = new ShooterIOInputsAutoLogged();
 
         this.shooterIO.config();
     }
@@ -85,11 +93,8 @@ public class Shooter extends SubsystemExt {
         shooterIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (MathUtil.isNear(
-                velocitySetpointRotsPerSec,
-                inputs.masterVelocityRotsPerSec,
-                VelocityToleranceRotsPerSec
-        )) {
+        final InternalGoal currentGoal;
+        if (atSetpoint()) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -97,6 +102,7 @@ public class Shooter extends SubsystemExt {
 
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
         Logger.recordOutput(LogKey + "/CurrentGoal", currentGoal);
+        Logger.recordOutput(LogKey + "/AtSetpoint", atSetpoint);
         Logger.recordOutput(LogKey + "/VelocitySetpointRotsPerSec", velocitySetpointRotsPerSec);
 
         Logger.recordOutput(
@@ -106,7 +112,7 @@ public class Shooter extends SubsystemExt {
     }
 
     public boolean atSetpoint() {
-        return desiredGoal == currentGoal;
+        return atSetpoint.getAsBoolean();
     }
 
     public double getVelocityRotsPerSec() {

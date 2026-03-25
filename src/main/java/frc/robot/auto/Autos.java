@@ -178,11 +178,36 @@ public class Autos {
                         deadline(
                                 indexer.toFeed()
                                         .onlyWhile(superstructure::atSetpoint),
-                                intake.stowFeed()
+                                intake.stowFeed().asProxy()
+                                        .unless(intake.isIntaking)
                         )
-                ).onlyWhile(fuelState.hasFuel),
+                ).onlyWhile(fuelState.hasFuel
+                        .or(intake.isIntaking)),
                 superstructure.runParameters(movingTOFShot)
                         .onlyIf(turretSafe)
+        ).withName("ShootMovingTOF");
+    }
+
+    private Command ferryToPoseMovingTOF(final Pose2d ferryTo) {
+        return deadline(
+                repeatingSequence(
+                        waitUntil(superstructure::atSetpoint),
+                        deadline(
+                                indexer.toFeed()
+                                        .onlyWhile(superstructure::atSetpoint),
+                                intake.stowFeed().asProxy()
+                                        .unless(intake.isIntaking)
+                        )
+                ).onlyWhile(fuelState.hasFuel
+                        .or(intake.isIntaking)),
+                superstructure.runParameters(
+                        MovingTOFShot.parametersSupplier(
+                                swerve::getPose,
+                                superstructure::getTurretTranslation,
+                                swerve::getRobotRelativeSpeeds,
+                                () -> ferryTo
+                        )
+                ).onlyIf(turretSafe)
         ).withName("ShootMovingTOF");
     }
 
@@ -269,6 +294,36 @@ public class Autos {
         );
 
         downAndAtEm_1.done().onTrue(shootStatic());
+
+        return routine;
+    }
+
+    public AutoRoutine upFerryAndScoot() {
+        final AutoRoutine routine = autoFactory.newRoutine("UpFerryAndScoot");
+        final AutoTrajectory upFerryAndScoot_0 = routine.trajectory("UpFerryAndScoot_0");
+
+        routine.active().onTrue(parallel(
+                runStartingTrajectory(upFerryAndScoot_0),
+                runOnce(fuelState::setSimFuelPreloaded)
+        ));
+        upFerryAndScoot_0.active().whileTrue(
+                parallel(
+                        intake.intake(),
+                        sequence(
+                                waitUntil(targetIsHub.negate()
+                                        .and(turretSafe)),
+                                ferryToPoseMovingTOF(FieldConstants.getFerryLeft())
+                                        .until(targetIsHub.or(turretSafe.negate())),
+                                superstructure.runParametersHoodStowed(movingTOFShot)
+                                        .until(targetIsHub.and(turretSafe)),
+                                shootMovingTOF()
+                        )
+                )
+        );
+
+        upFerryAndScoot_0.done().onTrue(sequence(
+                shootStatic()
+        ));
 
         return routine;
     }

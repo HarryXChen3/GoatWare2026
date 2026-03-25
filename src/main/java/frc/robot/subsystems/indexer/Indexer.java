@@ -16,8 +16,8 @@ public class Indexer extends VirtualSubsystem {
     private final Feeder feeder;
 
     private boolean feeding = false;
-    public final LoggedTrigger isFeeding = group.t("isFeeding", () -> feeding);
-    public final LoggedTrigger isFeederTOFDetected = group.t("isFeederTOFDetected", this::isFeederTOFDetected);
+    public final LoggedTrigger isFeeding = group.t("IsFeeding", () -> feeding);
+    public final LoggedTrigger isFeederTOFDetected = group.t("IsFeederTOFDetected", this::isFeederTOFDetected);
 
     public Indexer(final Hopper hopper, final Feeder feeder) {
         this.hopper = hopper;
@@ -38,7 +38,7 @@ public class Indexer extends VirtualSubsystem {
     }
 
     private Command feeding() {
-        return Commands.runEnd(() -> feeding = true, () -> feeding = false).withName("FeedingImpl");
+        return Commands.startEnd(() -> feeding = true, () -> feeding = false).withName("FeedingImpl");
     }
 
     public Command toFeed() {

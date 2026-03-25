@@ -69,8 +69,8 @@ public class FuelState extends VirtualSubsystem {
         this.indexer = indexer;
         this.superstructure = superstructure;
 
-        this.hasSimFuel = group.t("hasSimFuel", () -> simFuelCount > 0);
-        this.hasFuel = group.t("hasFuel", indexer::isFeederTOFDetected)
+        this.hasSimFuel = group.t("HasSimFuel", () -> simFuelCount > 0);
+        this.hasFuel = group.t("HasFuel", indexer::isFeederTOFDetected)
                 .debounce(0.5, Debouncer.DebounceType.kFalling);
 
         configureStateTriggers();

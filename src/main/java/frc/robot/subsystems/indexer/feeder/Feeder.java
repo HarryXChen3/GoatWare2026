@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.commands.ext.SubsystemExt;
+import frc.robot.utils.commands.trigger.LoggedTrigger;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
@@ -56,13 +57,22 @@ public class Feeder extends SubsystemExt {
         }
     }
 
+    private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
+
     private final FeederIO feederIO;
-    private final FeederIOInputsAutoLogged inputs;
+    private final FeederIOInputsAutoLogged inputs = new FeederIOInputsAutoLogged();
 
     private InternalGoal desiredGoal = InternalGoal.OFF;
-    private InternalGoal currentGoal = InternalGoal.NONE;
-
     private double velocitySetpointRotsPerSec;
+
+    public final LoggedTrigger atSetpoint = group.t(
+            "AtSetpoint",
+            () -> MathUtil.isNear(
+                    velocitySetpointRotsPerSec,
+                    inputs.rollerVelocityRotsPerSec,
+                    VelocityToleranceRotsPerSec
+            )
+    );
 
     public Feeder(final Constants.RobotMode mode, final HardwareConstants.FeederConstants constants) {
         this.feederIO = switch (mode) {
@@ -70,8 +80,6 @@ public class Feeder extends SubsystemExt {
             case SIM -> new FeederIOSim(constants);
             case REPLAY, DISABLED -> new FeederIO() {};
         };
-
-        this.inputs = new FeederIOInputsAutoLogged();
 
         this.feederIO.config();
     }
@@ -83,11 +91,8 @@ public class Feeder extends SubsystemExt {
         feederIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (MathUtil.isNear(
-                velocitySetpointRotsPerSec,
-                inputs.rollerVelocityRotsPerSec,
-                VelocityToleranceRotsPerSec
-        )) {
+        final InternalGoal currentGoal;
+        if (atSetpoint()) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -95,6 +100,7 @@ public class Feeder extends SubsystemExt {
 
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
         Logger.recordOutput(LogKey + "/CurrentGoal", currentGoal);
+        Logger.recordOutput(LogKey + "/AtSetpoint", atSetpoint);
         Logger.recordOutput(LogKey + "/VelocitySetpointRotsPerSec", velocitySetpointRotsPerSec);
 
         Logger.recordOutput(
@@ -104,7 +110,7 @@ public class Feeder extends SubsystemExt {
     }
 
     public boolean atSetpoint() {
-        return desiredGoal == currentGoal;
+        return atSetpoint.getAsBoolean();
     }
 
     public boolean isTOFDetected() {

@@ -18,6 +18,7 @@ import frc.robot.utils.subsystems.VirtualSubsystem;
 import frc.robot.utils.teleop.SwerveSpeed;
 import org.littletonrobotics.junction.Logger;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
@@ -87,10 +88,13 @@ public class ShootCommands extends VirtualSubsystem {
                 : Target.HUB;
     }
 
-    private Supplier<Pose2d> getTargetPoseSupplier() {
+    public static Supplier<Pose2d> getTargetPoseSupplier(
+            final Supplier<Pose2d> robotPoseSupplier,
+            final Function<Pose2d, Target> targetFunction
+    ) {
         return () -> {
-            final Pose2d robotPose = swerve.getPose();
-            final Target target = getTarget(robotPose);
+            final Pose2d robotPose = robotPoseSupplier.get();
+            final Target target = targetFunction.apply(robotPose);
             return switch (target) {
                 case HUB -> FieldConstants.getHubPose();
                 case FERRY, NONE_FERRY_BLOCKED -> {
@@ -104,6 +108,10 @@ public class ShootCommands extends VirtualSubsystem {
                 }
             };
         };
+    }
+
+    private Supplier<Pose2d> getTargetPoseSupplier() {
+        return getTargetPoseSupplier(swerve::getPose, ShootCommands::getTarget);
     }
 
     public Command trackTarget() {
@@ -146,7 +154,7 @@ public class ShootCommands extends VirtualSubsystem {
         return deadline(
                 repeatingSequence(
                         waitUntil(targetValid.and(superstructure::atSetpoint)),
-                        Commands.deadline(
+                        deadline(
                                 indexer.toFeed()
                                         .onlyWhile(targetValid.and(superstructure::atSetpoint)),
                                 intake.stowFeed()

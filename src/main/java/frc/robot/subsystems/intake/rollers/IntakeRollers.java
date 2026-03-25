@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.commands.ext.SubsystemExt;
+import frc.robot.utils.commands.trigger.LoggedTrigger;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
@@ -56,12 +57,22 @@ public class IntakeRollers extends SubsystemExt {
         }
     }
 
+    private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
+
     private final IntakeRollersIO intakeRollersIO;
-    private final IntakeRollersIOInputsAutoLogged inputs;
+    private final IntakeRollersIOInputsAutoLogged inputs = new IntakeRollersIOInputsAutoLogged();
 
     private InternalGoal desiredGoal = InternalGoal.OFF;
-    private InternalGoal currentGoal = InternalGoal.NONE;
     private double velocitySetpointRotsPerSec;
+
+    public final LoggedTrigger atSetpoint = group.t(
+            "AtSetpoint",
+            () -> MathUtil.isNear(
+                    velocitySetpointRotsPerSec,
+                    inputs.rollerVelocityRotsPerSec,
+                    VelocityToleranceRotsPerSec
+            )
+    );
 
     public IntakeRollers(final Constants.RobotMode mode, final HardwareConstants.IntakeRollersConstants constants) {
         this.intakeRollersIO = switch (mode) {
@@ -69,8 +80,6 @@ public class IntakeRollers extends SubsystemExt {
             case SIM -> new IntakeRollersIOSim(constants);
             case REPLAY, DISABLED -> new IntakeRollersIO() {};
         };
-
-        this.inputs = new IntakeRollersIOInputsAutoLogged();
 
         this.intakeRollersIO.config();
     }
@@ -82,11 +91,8 @@ public class IntakeRollers extends SubsystemExt {
         intakeRollersIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (MathUtil.isNear(
-                velocitySetpointRotsPerSec,
-                inputs.rollerVelocityRotsPerSec,
-                VelocityToleranceRotsPerSec
-        )) {
+        final InternalGoal currentGoal;
+        if (atSetpoint()) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -94,6 +100,7 @@ public class IntakeRollers extends SubsystemExt {
 
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
         Logger.recordOutput(LogKey + "/CurrentGoal", currentGoal);
+        Logger.recordOutput(LogKey + "/AtSetpoint", atSetpoint);
         Logger.recordOutput(LogKey + "/VelocitySetpointRotsPerSec", velocitySetpointRotsPerSec);
 
         Logger.recordOutput(
@@ -103,7 +110,7 @@ public class IntakeRollers extends SubsystemExt {
     }
 
     public boolean atSetpoint() {
-        return desiredGoal == currentGoal;
+        return atSetpoint.getAsBoolean();
     }
 
     private void setVelocityImpl(final double velocityRotsPerSec) {

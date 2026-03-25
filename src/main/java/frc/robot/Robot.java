@@ -49,6 +49,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -58,6 +59,8 @@ public class Robot extends LoggedRobot {
     protected static final String LogKey = "Robot";
     private static final String AKitLogPath = "/U/logs";
     private static final String HootLogPath = "/U/logs";
+
+    private static final double LoopOverrunWarningTimeoutSeconds = 0.2;
 
     public static final BooleanSupplier IsRedAlliance = () -> {
         final Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
@@ -185,6 +188,18 @@ public class Robot extends LoggedRobot {
 
         // disable joystick not found warnings when in sim
         DriverStation.silenceJoystickConnectionWarning(Constants.CURRENT_MODE != Constants.RobotMode.REAL);
+
+        // Adjust loop overrun warning timeout
+        try {
+            final Field watchdogField = IterativeRobotBase.class.getDeclaredField("m_watchdog");
+            watchdogField.setAccessible(true);
+
+            final Watchdog watchdog = (Watchdog) watchdogField.get(this);
+            watchdog.setTimeout(LoopOverrunWarningTimeoutSeconds);
+        } catch (final Exception e) {
+            DriverStation.reportWarning("Failed to disable loop overrun warnings.", false);
+        }
+        CommandScheduler.getInstance().setPeriod(LoopOverrunWarningTimeoutSeconds);
 
         switch (Constants.CURRENT_MODE) {
             case REAL -> {
@@ -368,6 +383,12 @@ public class Robot extends LoggedRobot {
         autoChooser.addAutoOption(new AutoOption(
                 "DownAndAtEm",
                 autos::downAndAtEm,
+                Constants.CompetitionType.COMPETITION
+        ));
+
+        autoChooser.addAutoOption(new AutoOption(
+                "UpFerryAndScoot",
+                autos::upFerryAndScoot,
                 Constants.CompetitionType.COMPETITION
         ));
 

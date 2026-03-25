@@ -73,8 +73,8 @@ public class Superstructure extends VirtualSubsystem {
     private final Hood hood;
 
     private InternalGoal desiredGoal = InternalGoal.STOW;
-    private InternalGoal currentGoal = InternalGoal.NONE;
 
+    public final LoggedTrigger atSetpoint;
     public final LoggedTrigger safeForTrench;
 
     public Superstructure(final Turret turret, final Shooter shooter, final Hood hood) {
@@ -82,6 +82,12 @@ public class Superstructure extends VirtualSubsystem {
         this.shooter = shooter;
         this.hood = hood;
 
+        this.atSetpoint = group.t(
+                "AtSetpoint",
+                () -> turret.atSetpoint()
+                        && shooter.atSetpoint()
+                        && hood.atSetpoint()
+        );
         this.safeForTrench = hood.safeForTrench;
     }
 
@@ -89,7 +95,8 @@ public class Superstructure extends VirtualSubsystem {
     public void periodic() {
         final double superstructurePeriodicUpdateStart = Timer.getFPGATimestamp();
 
-        if (hood.atSetpoint() && shooter.atSetpoint() && turret.atSetpoint()) {
+        final InternalGoal currentGoal;
+        if (atSetpoint()) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -104,6 +111,22 @@ public class Superstructure extends VirtualSubsystem {
                 LogKey + "/PeriodicIOPeriodMs",
                 Units.secondsToMilliseconds(Timer.getFPGATimestamp() - superstructurePeriodicUpdateStart)
         );
+    }
+
+    private boolean atGoal(final InternalGoal goal) {
+        return desiredGoal == goal && atSetpoint.getAsBoolean();
+    }
+
+    public LoggedTrigger atGoal(final Goal goal) {
+        return group.t("AtGoal", () -> atGoal(InternalGoal.fromGoal(goal)));
+    }
+
+    public boolean atSetpoint() {
+        return atSetpoint.getAsBoolean();
+    }
+
+    public double getShooterVelocityRotsPerSec() {
+        return shooter.getVelocityRotsPerSec();
     }
 
     public Transform2d getOffsetFromCenter() {
@@ -130,22 +153,6 @@ public class Superstructure extends VirtualSubsystem {
                 turretPose,
                 hoodPose
         };
-    }
-
-    public double getShooterVelocityRotsPerSec() {
-        return shooter.getVelocityRotsPerSec();
-    }
-
-    private boolean atGoal(final InternalGoal goal) {
-        return currentGoal == goal;
-    }
-
-    public LoggedTrigger atGoal(final Goal goal) {
-        return group.t("AtGoal", () -> atGoal(InternalGoal.fromGoal(goal)));
-    }
-
-    public boolean atSetpoint() {
-        return currentGoal == desiredGoal;
     }
 
     private Command updateDesiredGoal(final Supplier<InternalGoal> goalSupplier) {

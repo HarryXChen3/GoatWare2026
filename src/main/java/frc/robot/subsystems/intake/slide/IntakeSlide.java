@@ -105,18 +105,23 @@ public class IntakeSlide extends SubsystemExt {
     private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
 
     private final IntakeSlideIO intakeSlideIO;
-    private final IntakeSlideIOInputsAutoLogged inputs;
+    private final IntakeSlideIOInputsAutoLogged inputs = new IntakeSlideIOInputsAutoLogged();
 
     private final DeltaTime deltaTime = new DeltaTime();
     private final TrapezoidProfile.State profileGoal = new TrapezoidProfile.State(0, 0);
     private TrapezoidProfile.State profileSetpoint = new TrapezoidProfile.State(0, 0);
 
     private InternalGoal desiredGoal = InternalGoal.STOW;
-    private InternalGoal currentGoal = InternalGoal.NONE;
     private double positionSetpointRots;
 
     private HoldMode holdMode = HoldMode.STIFF;
-    private final LoggedTrigger squishyModeTrigger = group.t("SquishyMode", this::atSetpoint).debounce(0.1);
+
+    public final LoggedTrigger squishyModeTrigger = group.t("SquishyMode", this::atSetpoint).debounce(0.1);
+    public final LoggedTrigger atSetpoint = group.t(
+            "AtSetpoint",
+            () -> MathUtil.isNear(positionSetpointRots, inputs.masterPositionRots, PositionToleranceRots)
+                    && MathUtil.isNear(0, inputs.masterVelocityRotsPerSec, VelocityToleranceRotsPerSec)
+    );
 
     public IntakeSlide(final Constants.RobotMode mode, final HardwareConstants.IntakeSlideConstants constants) {
         this.intakeSlideIO = switch (mode) {
@@ -124,8 +129,6 @@ public class IntakeSlide extends SubsystemExt {
             case SIM -> new IntakeSlideIOSim(constants);
             case REPLAY, DISABLED -> new IntakeSlideIO() {};
         };
-
-        this.inputs = new IntakeSlideIOInputsAutoLogged();
 
         squishyModeTrigger.onTrue(Commands.runOnce(() -> {
             holdMode = HoldMode.SQUISHY;
@@ -140,9 +143,8 @@ public class IntakeSlide extends SubsystemExt {
         intakeSlideIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (MathUtil.isNear(positionSetpointRots, inputs.masterPositionRots, PositionToleranceRots)
-                && MathUtil.isNear(0, inputs.masterVelocityRotsPerSec, VelocityToleranceRotsPerSec)
-        ) {
+        final InternalGoal currentGoal;
+        if (atSetpoint()) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -160,6 +162,7 @@ public class IntakeSlide extends SubsystemExt {
 
         Logger.recordOutput(LogKey + "/DesiredGoal", desiredGoal);
         Logger.recordOutput(LogKey + "/CurrentGoal", currentGoal);
+        Logger.recordOutput(LogKey + "/AtSetpoint", atSetpoint);
         Logger.recordOutput(LogKey + "/PositionSetpointRots", positionSetpointRots);
         Logger.recordOutput(LogKey + "/HoldMode", holdMode);
 
@@ -170,11 +173,11 @@ public class IntakeSlide extends SubsystemExt {
     }
 
     public boolean atSetpoint() {
-        return desiredGoal == currentGoal;
+        return atSetpoint.getAsBoolean();
     }
 
     private boolean atGoal(final InternalGoal goal) {
-        return currentGoal == goal;
+        return desiredGoal == goal && atSetpoint();
     }
 
     public LoggedTrigger atGoal(final Goal goal) {
