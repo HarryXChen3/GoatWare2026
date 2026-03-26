@@ -18,7 +18,6 @@ import frc.robot.constants.FieldConstants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.constants.RobotMap;
 import frc.robot.subsystems.FuelState;
-import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
 import frc.robot.subsystems.indexer.Indexer;
@@ -30,7 +29,6 @@ import frc.robot.subsystems.intake.slide.IntakeSlide;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.hood.Hood;
 import frc.robot.subsystems.superstructure.shooter.Shooter;
-import frc.robot.subsystems.superstructure.turret.Turret;
 import frc.robot.subsystems.vision.PhotonVision;
 import frc.robot.utils.closeables.ToClose;
 import frc.robot.utils.commands.ext.CommandsExt;
@@ -88,10 +86,6 @@ public class Robot extends LoggedRobot {
             swerve
     );
 
-    public final Turret turret = new Turret(
-            Constants.CURRENT_MODE,
-            HardwareConstants.TURRET_CONSTANTS
-    );
     public final Shooter shooter = new Shooter(
             Constants.CURRENT_MODE,
             HardwareConstants.SHOOTER_CONSTANTS
@@ -100,9 +94,7 @@ public class Robot extends LoggedRobot {
             Constants.CURRENT_MODE,
             HardwareConstants.HOOD_CONSTANTS
     );
-    public final Superstructure superstructure = new Superstructure(
-            turret, shooter, hood
-    );
+    public final Superstructure superstructure = new Superstructure(shooter, hood);
 
     public final Hopper hopper = new Hopper(Constants.CURRENT_MODE, HardwareConstants.HOPPER_CONSTANTS);
     public final Feeder feeder = new Feeder(Constants.CURRENT_MODE, HardwareConstants.FEEDER_CONSTANTS);
@@ -117,8 +109,6 @@ public class Robot extends LoggedRobot {
             HardwareConstants.INTAKE_CONSTANTS
     );
     public final Intake intake = new Intake(intakeSlide, intakeRollers);
-
-    public final Climb climb = new Climb(Constants.CURRENT_MODE, HardwareConstants.CLIMB_CONSTANTS);
 
     public final FuelState fuelState = new FuelState(Constants.CURRENT_MODE, swerve, intake, indexer, superstructure);
     public final ShootCommands shootCommands = new ShootCommands(
@@ -273,7 +263,8 @@ public class Robot extends LoggedRobot {
                 "DistanceToHub",
                 FieldConstants.getHubPose()
                         .getTranslation()
-                        .getDistance(superstructure.getTurretTranslation(swerve.getPose()))
+                        .getDistance(superstructure.getShooterPose(swerve.getPose())
+                                .getTranslation())
         );
     }
 
@@ -321,24 +312,17 @@ public class Robot extends LoggedRobot {
     public void logComponentPoses() {
         final Pose3d[] superstructurePoses = superstructure.getComponentPoses();
         final Pose3d[] intakeSlidePoses = intakeSlide.getComponentPoses();
-        final Pose3d[] climbPoses = climb.getComponentPoses();
         Logger.recordOutput(
                 "ZeroedComponents",
-                Pose3d.kZero,
-                Pose3d.kZero,
-                Pose3d.kZero,
                 Pose3d.kZero,
                 Pose3d.kZero,
                 Pose3d.kZero
         );
         Logger.recordOutput(
                 "Components",
-                superstructurePoses[0],
-                intakeSlidePoses[1],
                 intakeSlidePoses[0],
-                superstructurePoses[1],
-                climbPoses[0],
-                climbPoses[1]
+                intakeSlidePoses[1],
+                superstructurePoses[0]
         );
     }
 
@@ -391,8 +375,12 @@ public class Robot extends LoggedRobot {
                         SwerveSpeed.Speeds.NORMAL
                 ).withName("SwerveSpeedSlow"));
 
+        //noinspection SuspiciousNameCombination
         driverController.a(teleopEventLoop)
-                .whileTrue(shootCommands.shoot())
+                .whileTrue(shootCommands.shoot(
+                        driverController::getLeftY,
+                        driverController::getLeftX
+                ))
                 .onFalse(intake.deploy());
         driverController.b(teleopEventLoop).whileTrue(intake.intake());
     }

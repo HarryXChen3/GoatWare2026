@@ -642,10 +642,11 @@ public class Swerve extends SubsystemExt {
         return instantRun(
                 () -> {
                     headingControllerActive = true;
+                    headingTarget = rotationTargetSupplier.get();
                     headingController.reset();
                 },
                 () -> {
-                    this.headingTarget = rotationTargetSupplier.get();
+                    headingTarget = rotationTargetSupplier.get();
                     driveFieldRelative(
                             0,
                             0,

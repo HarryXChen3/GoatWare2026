@@ -85,7 +85,8 @@ public class Autos {
         this.staticShot = staticParameters(swerve::getPose);
         this.movingTOFShot = MovingTOFShot.parametersSupplier(
                 swerve::getPose,
-                superstructure::getTurretTranslation,
+                superstructure::getShooterPose,
+                superstructure::getShooterOffset,
                 swerve::getRobotRelativeSpeeds,
                 FieldConstants::getHubPose
         );
@@ -101,7 +102,7 @@ public class Autos {
                     final double safeXClose = FieldConstants.getTurretSafeXCloseBoundary();
                     final double safeXFar = FieldConstants.getTurretSafeXFarBoundary();
                     final double turretX = superstructure
-                            .getTurretTranslation(swerve.getPose())
+                            .getShooterPose(swerve.getPose())
                             .getX();
                     return Robot.IsRedAlliance.getAsBoolean()
                             ? (turretX >= safeXClose || turretX <= safeXFar)
@@ -120,8 +121,8 @@ public class Autos {
     private Supplier<ShotParameters> staticParameters(final Supplier<Pose2d> robotPoseSupplier) {
         return StaticShot.parametersSupplier(
                 robotPoseSupplier,
-                superstructure::getTurretTranslation,
-                swerve::getRobotRelativeSpeeds,
+                superstructure::getShooterPose,
+                superstructure::getShooterOffset,
                 FieldConstants::getHubPose
         );
     }

@@ -137,10 +137,10 @@ public class FuelState extends VirtualSubsystem {
 
         teleopEnabled.onTrue(Commands.runOnce(() -> setSimFuelCount(500)));
 
-        final double fuelIntakePerSecond = 10;
+        final double fuelIntakePerSecond = 16;
         intake.isIntaking.whileTrue(setInterval(1 / fuelIntakePerSecond, () -> simFuelCount++));
 
-        final double fuelFedPerSecond = 18;
+        final double fuelFedPerSecond = 28;
         indexer.isFeeding
                 .and(hasFuel)
                 .and(hasSimFuel)
@@ -148,23 +148,51 @@ public class FuelState extends VirtualSubsystem {
                         1 / fuelFedPerSecond,
                         () -> {
                             final Pose2d robotPose = swerve.getPose();
-                            final Pose3d hoodComponentPose = superstructure.getComponentPoses()[1];
-                            final Pose3d hoodPose = new Pose3d(robotPose)
+                            final Pose3d hoodComponentPose = superstructure.getComponentPoses()[0];
+
+                            final double leftExitY = SimConstants.Hood.FuelExitLeftYBoundMeters;
+                            final double rightExitY = SimConstants.Hood.FuelExitRightYBoundMeters;
+                            final Pose3d fuelExitPose = new Pose3d(robotPose)
                                     .plus(new Transform3d(
                                             hoodComponentPose.getTranslation(),
                                             hoodComponentPose.getRotation()
                                     ))
-                                    .plus(SimConstants.Hood.FuelExitOffset);
+                                    .plus(SimConstants.Hood.FuelExitOffset)
+                                    .plus(new Transform3d(
+                                            0,
+                                            random.nextDouble(
+                                                    Math.min(leftExitY, rightExitY),
+                                                    Math.max(leftExitY, rightExitY)
+                                            ),
+                                            0,
+                                            Rotation3d.kZero
+                                    ));
 
-                            final ChassisSpeeds turretFieldSpeeds = MovingTOFShot.getTurretFieldSpeeds(
+                            final ChassisSpeeds turretFieldSpeeds = MovingTOFShot.getShooterFieldSpeeds(
                                     robotPose,
-                                    superstructure.getTurretTranslation(robotPose),
+                                    superstructure.getShooterPose(robotPose),
                                     swerve.getFieldRelativeSpeeds()
                             );
 
+                            final double velocityMag = ShooterOmegaToBallVelocity
+                                    .get(superstructure.getShooterVelocityRotsPerSec());
+                            final Vector<N3> axis = FuelCache.Fuel.ForwardAxis
+                                    .rotateBy(fuelExitPose.getRotation())
+                                    .toVector();
+                            final Pose3d randomized = new Pose3d(
+                                    fuelExitPose.getTranslation(),
+                                    new Rotation3d(
+                                            FuelCache.Fuel.ForwardAxisVec,
+                                            FuelCache.Fuel.randomCone(axis, Units.degreesToRadians(3.5))
+                                    )
+                            );
+                            final Translation3d velocity = FuelCache.Fuel.ForwardAxis
+                                    .rotateBy(randomized.getRotation())
+                                    .times(velocityMag);
+
                             fuelCache.spawn(
-                                    hoodPose,
-                                    ShooterOmegaToBallVelocity.get(superstructure.getShooterVelocityRotsPerSec()),
+                                    fuelExitPose,
+                                    velocity,
                                     turretFieldSpeeds
                             );
                             simFuelCount = Math.max(simFuelCount - 1, 0);
@@ -249,11 +277,11 @@ public class FuelState extends VirtualSubsystem {
 
         public void spawn(
                 final Pose3d pose,
-                final double velocityMetersPerSec,
+                final Translation3d velocity,
                 final ChassisSpeeds turretFieldSpeeds
         ) {
             final Fuel cached = fuel[index];
-            cached.at(pose, velocityMetersPerSec, turretFieldSpeeds);
+            cached.at(pose, velocity, turretFieldSpeeds);
             index = (index + 1) % fuel.length;
         }
 
@@ -288,9 +316,9 @@ public class FuelState extends VirtualSubsystem {
         }
 
         private static class Fuel {
-            private static final Translation3d ForwardAxis = new Translation3d(1, 0, 0);
-            private static final Vector<N3> ForwardAxisVec = ForwardAxis.toVector();
-            private static final double GravityMetersPerSecSquared = 9.81;
+            public static final Translation3d ForwardAxis = new Translation3d(1, 0, 0);
+            public static final Vector<N3> ForwardAxisVec = ForwardAxis.toVector();
+            public static final double GravityMetersPerSecSquared = 9.81;
 
             private boolean active = false;
             private double activeStartTime = 0;
@@ -311,7 +339,7 @@ public class FuelState extends VirtualSubsystem {
 
             public void at(
                     final Pose3d pose,
-                    final double velocityMetersPerSec,
+                    final Translation3d velocity,
                     final ChassisSpeeds turretFieldSpeeds
             ) {
                 active = true;
@@ -320,15 +348,6 @@ public class FuelState extends VirtualSubsystem {
                 x = pose.getX();
                 y = pose.getY();
                 z = pose.getZ();
-
-                final Vector<N3> axis = ForwardAxis.rotateBy(pose.getRotation()).toVector();
-                final Pose3d randomized = new Pose3d(
-                        pose.getTranslation(),
-                        new Rotation3d(ForwardAxisVec, randomCone(axis, Units.degreesToRadians(1)))
-                );
-
-                final Translation3d velocity = ForwardAxis.rotateBy(randomized.getRotation())
-                        .times(velocityMetersPerSec);
 
                 vx = velocity.getX() + turretFieldSpeeds.vxMetersPerSecond;
                 vy = velocity.getY() + turretFieldSpeeds.vyMetersPerSecond;

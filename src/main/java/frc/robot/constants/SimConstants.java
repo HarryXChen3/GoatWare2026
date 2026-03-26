@@ -14,18 +14,19 @@ public interface SimConstants {
         double ConfigTimeoutSeconds = 0.2;
     }
 
-    interface Turret {
-        Translation3d OriginOffset = new Translation3d(-0.127, 0, 0.386);
-    }
-
     interface Hood {
-        Translation3d TurretOffset = new Translation3d(0.121, 0, 0.054);
+        Translation3d OriginOffset = new Translation3d(-0.2305, 0, 0.4841);
         Transform3d FuelExitOffset = new Transform3d(
-                Units.inchesToMeters(-4.604),
+                Units.inchesToMeters(4.604),
                 0,
                 Units.inchesToMeters(-2.125),
-                new Rotation3d(0, (-Math.PI / 2) + Units.degreesToRadians(10), 0)
+                new Rotation3d(0, (-Math.PI / 2) - Units.degreesToRadians(10), 0)
         );
+
+        double WidthMeters = Units.inchesToMeters(23.5);
+        double FuelRadiusMeters = Units.inchesToMeters(5.91) / 2;
+        double FuelExitLeftYBoundMeters = (WidthMeters / 2) - FuelRadiusMeters;
+        double FuelExitRightYBoundMeters = -FuelExitLeftYBoundMeters;
     }
 
     interface Shooter {
@@ -37,18 +38,18 @@ public interface SimConstants {
         double DrivingGearDiameterMeters = Units.inchesToMeters(1);
         double SlideRotationsToLinearDistanceMetersRatio = 2 * Math.PI * (DrivingGearDiameterMeters / 2);
 
-        Pose3d ExtendedPose = Pose3d.kZero;
-        Pose3d RetractedPose = new Pose3d(
-                Units.inchesToMeters(-10.616),
+        Pose3d ExtendedPose = new Pose3d(
+                Units.inchesToMeters(13.125),
                 0,
-                Units.inchesToMeters(3.655),
+                0,
                 Rotation3d.kZero
         );
+        Pose3d RetractedPose = Pose3d.kZero;
     }
 
     interface HopperExtension {
         Pose3d ExtendedPose = new Pose3d(
-                Units.inchesToMeters(12.606),
+                Units.inchesToMeters(11),
                 0,
                 0,
                 Rotation3d.kZero

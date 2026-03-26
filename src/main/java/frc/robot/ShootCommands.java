@@ -18,6 +18,7 @@ import frc.robot.utils.subsystems.VirtualSubsystem;
 import frc.robot.utils.teleop.SwerveSpeed;
 import org.littletonrobotics.junction.Logger;
 
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
@@ -110,13 +111,14 @@ public class ShootCommands extends VirtualSubsystem {
         final Supplier<Pose2d> targetSupplier = getTargetPoseSupplier();
         final Supplier<ShotParameters> staticParametersSupplier = StaticShot.parametersSupplier(
                 swerve::getPose,
-                superstructure::getTurretTranslation,
-                swerve::getRobotRelativeSpeeds,
+                superstructure::getShooterPose,
+                superstructure::getShooterOffset,
                 targetSupplier
         );
         final Supplier<ShotParameters> movingTOFParametersSupplier = MovingTOFShot.parametersSupplier(
                 swerve::getPose,
-                superstructure::getTurretTranslation,
+                superstructure::getShooterPose,
+                superstructure::getShooterOffset,
                 () -> {
                     final ChassisSpeeds robotSpeeds = swerve.getRobotRelativeSpeeds();
                     final double linearSpeed = Math.hypot(robotSpeeds.vxMetersPerSecond, robotSpeeds.vyMetersPerSecond);
@@ -143,31 +145,38 @@ public class ShootCommands extends VirtualSubsystem {
                     case NONE_FERRY_BLOCKED -> false;
                 });
 
+        final ShotParameters.CachedShot cachedShot = ShotParameters.getCached(
+                StaticShot.parametersSupplier(
+                        swerve::getPose,
+                        superstructure::getShooterPose,
+                        superstructure::getShooterOffset,
+                        targetPoseSupplier
+                )
+        );
+
         return deadline(
                 repeatingSequence(
-                        waitUntil(targetValid.and(superstructure::atSetpoint)),
-                        Commands.deadline(
+                        waitUntil(targetValid
+                                .and(superstructure::atSetpoint)
+                                .and(swerve.atHeadingSetpoint)),
+                        deadline(
                                 indexer.toFeed()
-                                        .onlyWhile(targetValid.and(superstructure::atSetpoint)),
+                                        .onlyWhile(targetValid
+                                                .and(superstructure::atSetpoint)
+                                                .and(swerve.atHeadingSetpoint)),
                                 intake.stowFeed()
                         )
                 )
                         .onlyIf(fuelState.hasFuel)
                         .onlyWhile(fuelState.hasFuel
                                 .or(intake.isIntaking)),
-                superstructure.runParameters(
-                        StaticShot.parametersSupplier(
-                                swerve::getPose,
-                                superstructure::getTurretTranslation,
-                                swerve::getRobotRelativeSpeeds,
-                                targetPoseSupplier
-                        )
-                ),
-                swerve.runWheelXCommand()
+                superstructure.runParameters(cachedShot),
+                swerve.faceAngle(() -> cachedShot.get().robotAngle()),
+                cachedShot.clear()
         ).withName("StopAndShoot");
     }
 
-    public Command shoot() {
+    public Command shoot(final DoubleSupplier xSpeedSupplier, final DoubleSupplier ySpeedSupplier) {
         final Supplier<Pose2d> targetSupplier = getTargetPoseSupplier();
         final LoggedTrigger targetValid = group.t(
                 "TargetValid",
@@ -181,16 +190,28 @@ public class ShootCommands extends VirtualSubsystem {
                         <= ShootAndScootSpeeds.getTranslationSpeed() + ShootAndScootTolerance
         );
 
+        final ShotParameters.CachedShot cachedShot = ShotParameters.getCached(
+                MovingTOFShot.parametersSupplier(
+                        swerve::getPose,
+                        superstructure::getShooterPose,
+                        superstructure::getShooterOffset,
+                        swerve::getRobotRelativeSpeeds,
+                        targetSupplier
+                )
+        );
+
         return deadline(
                 repeatingSequence(
                         waitUntil(targetValid
                                 .and(swerveReady)
-                                .and(superstructure::atSetpoint)),
+                                .and(superstructure::atSetpoint)
+                                .and(swerve.atHeadingSetpoint)),
                         Commands.deadline(
                                 indexer.toFeed()
                                         .onlyWhile(targetValid
                                                 .and(swerveReady)
-                                                .and(superstructure::atSetpoint)),
+                                                .and(superstructure::atSetpoint)
+                                                .and(swerve.atHeadingSetpoint)),
                                 intake.stowFeed().asProxy()
                                         .unless(intake.isIntaking)
                         )
@@ -199,14 +220,13 @@ public class ShootCommands extends VirtualSubsystem {
                         .onlyWhile(fuelState.hasFuel
                                 .or(intake.isIntaking)),
                 SwerveSpeed.toSwerveSpeed(ShootAndScootSpeeds),
-                superstructure.runParameters(
-                        MovingTOFShot.parametersSupplier(
-                                swerve::getPose,
-                                superstructure::getTurretTranslation,
-                                swerve::getRobotRelativeSpeeds,
-                                targetSupplier
-                        )
-                )
+                superstructure.runParameters(cachedShot),
+                swerve.teleopFacingAngle(
+                        xSpeedSupplier,
+                        ySpeedSupplier,
+                        () -> cachedShot.get().robotAngle()
+                ),
+                cachedShot.clear()
         ).withName("Shoot");
     }
 }

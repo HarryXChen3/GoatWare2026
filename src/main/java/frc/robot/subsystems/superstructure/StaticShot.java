@@ -1,12 +1,13 @@
 package frc.robot.subsystems.superstructure;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
+import org.littletonrobotics.junction.Logger;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -29,44 +30,64 @@ public class StaticShot {
     }
 
     public static Rotation2d angleToTarget(
+            final Translation2d from,
+            final Pose2d target
+    ) {
+        return target.getTranslation()
+                .minus(from)
+                .getAngle();
+//                .plus(Rotation2d.kPi);
+    }
+
+    public static Rotation2d anglePointingShooter(
             final Pose2d robotPose,
-            final Translation2d turretTranslation,
+            final Transform2d shooterOffset,
             final Pose2d targetPose
     ) {
-        return targetPose.getTranslation()
-                .minus(turretTranslation)
-                .getAngle()
-                .minus(robotPose.getRotation());
+        final Translation2d robotTranslation = robotPose.getTranslation();
+        final double distanceToRobot = robotTranslation
+                .getDistance(targetPose.getTranslation());
+        final Rotation2d toTarget = angleToTarget(robotTranslation, targetPose);
+
+        final Rotation2d offsetAngle = Rotation2d.fromRadians(
+                Math.asin(MathUtil.clamp(
+                        shooterOffset.getTranslation().getY() / distanceToRobot,
+                        -1.0,
+                        1.0
+                ))
+        );
+
+        return toTarget
+                .plus(offsetAngle)
+                .plus(shooterOffset.getRotation());
     }
 
     public static ShotParameters getParameters(
             final Pose2d robotPose,
-            final Translation2d turretTranslation,
-            final ChassisSpeeds robotRelativeSpeeds,
+            final Pose2d shooterPose,
+            final Transform2d shooterOffset,
             final Pose2d targetPose
     ) {
         return new ShotParameters(
-                ShotMap.get(
-                        turretTranslation
-                                .getDistance(targetPose.getTranslation())
-                ),
-                angleToTarget(robotPose, turretTranslation, targetPose),
-                Units.radiansToRotations(-robotRelativeSpeeds.omegaRadiansPerSecond)
+                ShotMap.get(shooterPose.getTranslation()
+                        .getDistance(targetPose.getTranslation())),
+                anglePointingShooter(robotPose, shooterOffset, targetPose),
+                0
         );
     }
 
     public static Supplier<ShotParameters> parametersSupplier(
             final Supplier<Pose2d> robotPoseSupplier,
-            final Function<Pose2d, Translation2d> toTurretFn,
-            final Supplier<ChassisSpeeds> robotRelativeSpeedsSupplier,
+            final Function<Pose2d, Pose2d> toShooterFn,
+            final Supplier<Transform2d> shooterOffsetSupplier,
             final Supplier<Pose2d> targetPoseSupplier
     ) {
         return () -> {
             final Pose2d robotPose = robotPoseSupplier.get();
             return StaticShot.getParameters(
                     robotPose,
-                    toTurretFn.apply(robotPose),
-                    robotRelativeSpeedsSupplier.get(),
+                    toShooterFn.apply(robotPose),
+                    shooterOffsetSupplier.get(),
                     targetPoseSupplier.get()
             );
         };

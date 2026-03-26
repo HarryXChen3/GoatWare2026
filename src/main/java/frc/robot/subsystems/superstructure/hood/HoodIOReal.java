@@ -110,8 +110,8 @@ public class HoodIOReal implements HoodIO {
     }
 
     @Override
-    public void toHoodPosition(final double turretPositionRots) {
-        motor.setControl(positionVoltage.withPosition(turretPositionRots));
+    public void toHoodPosition(final double hoodPositionRots) {
+        motor.setControl(positionVoltage.withPosition(hoodPositionRots));
     }
 
     @Override

@@ -3,6 +3,7 @@ package frc.robot.subsystems.superstructure;
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import org.littletonrobotics.junction.Logger;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -20,25 +21,25 @@ public class MovingTOFShot {
         TimeOfFlightMap.put(5.73, 1.31);
     }
 
-    public static ChassisSpeeds getTurretFieldSpeeds(
+    public static ChassisSpeeds getShooterFieldSpeeds(
             final Pose2d robotPose,
-            final Translation2d turretTranslation,
+            final Pose2d shooterPose,
             final ChassisSpeeds fieldRelativeSpeeds
     ) {
-        return getTurretFieldSpeeds(
+        return getShooterFieldSpeeds(
                 robotPose,
-                new Transform2d(robotPose, new Pose2d(turretTranslation, Rotation2d.kZero)),
+                new Transform2d(robotPose, shooterPose),
                 fieldRelativeSpeeds
         );
     }
 
-    public static ChassisSpeeds getTurretFieldSpeeds(
+    public static ChassisSpeeds getShooterFieldSpeeds(
             final Pose2d robotPose,
-            final Transform2d turretOffset,
+            final Transform2d shooterOffset,
             final ChassisSpeeds fieldRelativeSpeeds
     ) {
         final double omega = fieldRelativeSpeeds.omegaRadiansPerSecond;
-        final Translation2d rField = turretOffset
+        final Translation2d rField = shooterOffset
                 .getTranslation()
                 .rotateBy(robotPose.getRotation());
 
@@ -54,12 +55,12 @@ public class MovingTOFShot {
 
     public static ShotParameters getParameters(
             final Pose2d robotPose,
-            final Translation2d turretTranslation,
+            final Pose2d shooterPose,
+            final Transform2d shooterOffset,
             final ChassisSpeeds robotSpeeds,
             final Pose2d targetPose
     ) {
-        final Pose2d offsetTurretPose = new Pose2d(turretTranslation, Rotation2d.kZero);
-        final double distance = turretTranslation
+        final double distance = shooterPose.getTranslation()
                 .getDistance(targetPose.getTranslation());
         final Pose2d lookaheadRobotPose = robotPose.exp(new Twist2d(
                 robotSpeeds.vxMetersPerSecond * LookaheadSeconds,
@@ -72,41 +73,45 @@ public class MovingTOFShot {
                 robotSpeeds,
                 robotAngle
         );
-
-        final Transform2d turretOffset = offsetTurretPose.minus(lookaheadRobotPose);
-        final ChassisSpeeds turretFieldVelocity = getTurretFieldSpeeds(lookaheadRobotPose, turretOffset, fieldSpeeds);
+        final ChassisSpeeds shooterFieldSpeeds = getShooterFieldSpeeds(
+                lookaheadRobotPose,
+                shooterOffset,
+                fieldSpeeds
+        );
 
         double timeOfFlight;
-        Pose2d futureTurretPose = offsetTurretPose;
+        Pose2d futureShooterPose = shooterPose;
         double futureDistance = distance;
 
         for (int i = 0; i < 20; i++) {
             timeOfFlight = TimeOfFlightMap.get(futureDistance);
 
             final Translation2d delta = new Translation2d(
-                    turretFieldVelocity.vxMetersPerSecond * timeOfFlight,
-                    turretFieldVelocity.vyMetersPerSecond * timeOfFlight
+                    shooterFieldSpeeds.vxMetersPerSecond * timeOfFlight,
+                    shooterFieldSpeeds.vyMetersPerSecond * timeOfFlight
             );
-            futureTurretPose = new Pose2d(
-                    offsetTurretPose.getTranslation().plus(delta),
-                    offsetTurretPose.getRotation()
+            futureShooterPose = new Pose2d(
+                    shooterPose.getTranslation().plus(delta),
+                    shooterPose.getRotation()
             );
-            futureDistance = futureTurretPose.getTranslation()
+            futureDistance = futureShooterPose.getTranslation()
                     .getDistance(targetPose.getTranslation());
         }
 
-        final Pose2d futureRobotPose = futureTurretPose.transformBy(turretOffset.inverse());
+        final Pose2d futureRobotPose = futureShooterPose.transformBy(shooterOffset.inverse());
         return StaticShot.getParameters(
                 futureRobotPose,
-                futureTurretPose.getTranslation(),
-                robotSpeeds,
+                futureShooterPose,
+                shooterOffset,
+//                robotSpeeds,
                 targetPose
         );
     }
 
     public static Supplier<ShotParameters> parametersSupplier(
             final Supplier<Pose2d> robotPoseSupplier,
-            final Function<Pose2d, Translation2d> toTurretFn,
+            final Function<Pose2d, Pose2d> toShooterFn,
+            final Supplier<Transform2d> shooterOffsetSupplier,
             final Supplier<ChassisSpeeds> robotRelativeSpeedsSupplier,
             final Supplier<Pose2d> targetPoseSupplier
     ) {
@@ -114,7 +119,8 @@ public class MovingTOFShot {
             final Pose2d robotPose = robotPoseSupplier.get();
             return MovingTOFShot.getParameters(
                     robotPose,
-                    toTurretFn.apply(robotPose),
+                    toShooterFn.apply(robotPose),
+                    shooterOffsetSupplier.get(),
                     robotRelativeSpeedsSupplier.get(),
                     targetPoseSupplier.get()
             );

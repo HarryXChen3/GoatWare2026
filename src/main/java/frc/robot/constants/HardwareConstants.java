@@ -1,7 +1,6 @@
 package frc.robot.constants;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.*;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -35,80 +34,6 @@ public class HardwareConstants {
         }
     }
 
-    public record TurretConstants(
-            CANBus CANBus,
-            int motorId,
-            int primaryCANcoderId,
-            int secondaryCANcoderId,
-            double primaryCANcoderOffsetRots,
-            double secondaryCANcoderOffsetRots,
-            double forwardLimitRots,
-            double reverseLimitRots,
-            int drivingGearTeeth,
-            int drivenTurretGearTeeth,
-            int primaryCANcoderGearTeeth,
-            int secondaryCANcoderGearTeeth,
-            double motorToGearboxGearing,
-            double gearboxToTurretGearing,
-            double primaryCANcoderGearing,
-            double secondaryCANcoderGearing,
-            Transform2d offsetFromCenter
-    ) {
-        public TurretConstants(
-                CANBus CANBus,
-                int motorId,
-                int primaryCANcoderId,
-                int secondaryCANcoderId,
-                double primaryCANcoderOffsetRots,
-                double secondaryCANcoderOffsetRots,
-                double forwardLimitRots,
-                double reverseLimitRots,
-                int drivingGearTeeth,
-                int drivenTurretGearTeeth,
-                int primaryCANcoderGearTeeth,
-                int secondaryCANcoderGearTeeth,
-                double motorToGearboxGearing,
-                Transform2d offsetFromCenter
-        ) {
-            this(
-                    CANBus,
-                    motorId,
-                    primaryCANcoderId,
-                    secondaryCANcoderId,
-                    primaryCANcoderOffsetRots,
-                    secondaryCANcoderOffsetRots,
-                    forwardLimitRots,
-                    reverseLimitRots,
-                    drivingGearTeeth,
-                    drivenTurretGearTeeth,
-                    primaryCANcoderGearTeeth,
-                    secondaryCANcoderGearTeeth,
-                    motorToGearboxGearing,
-                    ((double) drivenTurretGearTeeth) / drivingGearTeeth,
-                    ((double) primaryCANcoderGearTeeth) / drivenTurretGearTeeth,
-                    ((double) secondaryCANcoderGearTeeth) / drivenTurretGearTeeth,
-                    offsetFromCenter
-            );
-        }
-    }
-
-    public static final TurretConstants TURRET_CONSTANTS = new TurretConstants(
-            CANBus.CANIVORE,
-            14,
-            15,
-            16,
-            0.0,
-            0.0,
-            1.0,
-            -1.0,
-            10,
-            80,
-            13,
-            17,
-            36.0 / 12.0,
-            new Transform2d(-0.127, 0, Rotation2d.kZero)
-    );
-
     public record HoodConstants(
             CANBus CANBus,
             int motorId,
@@ -129,14 +54,16 @@ public class HardwareConstants {
             CANBus CANBus,
             int masterId,
             int followerId,
-            double gearing
+            double gearing,
+            Transform2d offsetFromCenter
     ) {}
 
     public static final ShooterConstants SHOOTER_CONSTANTS = new ShooterConstants(
             CANBus.RIO,
             18,
             19,
-            2
+            2,
+            new Transform2d(-0.2305, 0, Rotation2d.kPi)
     );
 
     public record IntakeRollersConstants(
@@ -167,7 +94,7 @@ public class HardwareConstants {
             22,
             (60.0 / 12.0) * (40.0 / 18.0),
             1,
-            3.6,
+            4.4,
             0
     );
 

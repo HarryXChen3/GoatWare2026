@@ -54,7 +54,7 @@ public class IntakeSlide extends SubsystemExt {
 
     public enum Goal {
         STOW(0, GoalBehavior.expo()),
-        INTAKE(3.6, GoalBehavior.expo()),
+        INTAKE(4, GoalBehavior.expo()),
         STOW_FEED(0, GoalBehavior.withVelocity(1.2, 0.75));
 
         public final double positionRots;
