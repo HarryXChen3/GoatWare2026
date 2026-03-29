@@ -12,11 +12,11 @@ public class MovingNewtonsTOFShot implements ShotProvider<ShotProvider.Kind.Movi
     // TODO: need to move this out somewhere so it's not duplicated in MovingTOFShot too
     public static ChassisSpeeds getTurretFieldSpeeds(
             final Pose2d robotPose,
-            final Transform2d turretOffset,
+            final Transform2d robotToTurret,
             final ChassisSpeeds fieldRelativeSpeeds
     ) {
         final double omega = fieldRelativeSpeeds.omegaRadiansPerSecond;
-        final Translation2d rField = turretOffset
+        final Translation2d rField = robotToTurret
                 .getTranslation()
                 .rotateBy(robotPose.getRotation());
 
@@ -33,7 +33,7 @@ public class MovingNewtonsTOFShot implements ShotProvider<ShotProvider.Kind.Movi
     @Override
     public ShotParameters getParameters(
             final Pose2d robotPose,
-            final Translation2d turretTranslation,
+            final Transform2d robotToTurret,
             final ChassisSpeeds robotSpeeds,
             final Pose2d targetPose
     ) {
@@ -49,16 +49,13 @@ public class MovingNewtonsTOFShot implements ShotProvider<ShotProvider.Kind.Movi
 
         // you want to look through it, maybe give it a try and see if you can make it better?
 
-        final Pose2d offsetTurretPose = new Pose2d(turretTranslation, Rotation2d.kZero);
-        final Transform2d turretOffset = offsetTurretPose.minus(robotPose);
-
         final Pose2d lookaheadRobotPose = robotPose.exp(new Twist2d(
                 robotSpeeds.vxMetersPerSecond * LookaheadSeconds,
                 robotSpeeds.vyMetersPerSecond * LookaheadSeconds,
                 robotSpeeds.omegaRadiansPerSecond * LookaheadSeconds
         ));
 //        final Transform2d turretOffset = offsetTurretPose.minus(lookaheadRobotPose);
-        final Pose2d lookaheadTurretPose = lookaheadRobotPose.transformBy(turretOffset);
+        final Pose2d lookaheadTurretPose = lookaheadRobotPose.transformBy(robotToTurret);
 
         final Translation2d toGoal = targetPose.getTranslation()
                 .minus(lookaheadTurretPose.getTranslation());
@@ -72,7 +69,7 @@ public class MovingNewtonsTOFShot implements ShotProvider<ShotProvider.Kind.Movi
         final Rotation2d robotAngle = lookaheadRobotPose.getRotation();
         final ChassisSpeeds fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(robotSpeeds, robotAngle);
         final ChassisSpeeds turretFieldSpeeds =
-                getTurretFieldSpeeds(lookaheadRobotPose, turretOffset, fieldSpeeds);
+                getTurretFieldSpeeds(lookaheadRobotPose, robotToTurret, fieldSpeeds);
 
         final Translation2d targetVelocity = targetDirection.times(initialVelocity);
         final Translation2d turretVelocity = new Translation2d(

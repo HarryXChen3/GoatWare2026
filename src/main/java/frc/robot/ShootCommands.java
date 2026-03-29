@@ -65,7 +65,7 @@ public class ShootCommands extends VirtualSubsystem {
         this.staticShotProvider = new StaticShot();
         this.staticShot = staticShotProvider.parametersSupplier(
                 swerve::getPose,
-                superstructure::getTurretTranslation,
+                superstructure::getRobotToTurret,
                 swerve::getRobotRelativeSpeeds,
                 targetPoseSupplier
         );
@@ -73,7 +73,7 @@ public class ShootCommands extends VirtualSubsystem {
         this.movingShotProvider = new MovingTOFShot();
         this.movingShot = movingShotProvider.parametersSupplier(
                 swerve::getPose,
-                superstructure::getTurretTranslation,
+                superstructure::getRobotToTurret,
                 swerve::getRobotRelativeSpeeds,
                 targetPoseSupplier
         );
@@ -141,13 +141,13 @@ public class ShootCommands extends VirtualSubsystem {
     public Command trackTarget() {
         final Supplier<ShotParameters> staticParametersSupplier = staticShotProvider.parametersSupplier(
                 swerve::getPose,
-                superstructure::getTurretTranslation,
+                superstructure::getRobotToTurret,
                 swerve::getRobotRelativeSpeeds,
                 targetPoseSupplier
         );
         final Supplier<ShotParameters> movingTOFParametersSupplier = movingShotProvider.parametersSupplier(
                 swerve::getPose,
-                superstructure::getTurretTranslation,
+                superstructure::getRobotToTurret,
                 () -> {
                     final ChassisSpeeds robotSpeeds = swerve.getRobotRelativeSpeeds();
                     final double linearSpeed = Math.hypot(robotSpeeds.vxMetersPerSecond, robotSpeeds.vyMetersPerSecond);

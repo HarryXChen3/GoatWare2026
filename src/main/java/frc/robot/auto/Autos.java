@@ -122,7 +122,7 @@ public class Autos {
     private Supplier<ShotParameters> staticParameters(final Supplier<Pose2d> robotPoseSupplier) {
         return staticShotProvider.parametersSupplier(
                 robotPoseSupplier,
-                superstructure::getTurretTranslation,
+                superstructure::getRobotToTurret,
                 swerve::getRobotRelativeSpeeds,
                 FieldConstants::getHubPose
         );
@@ -131,7 +131,7 @@ public class Autos {
     private Supplier<ShotParameters> movingParameters(final Supplier<Pose2d> targetPoseSupplier) {
         return movingShotProvider.parametersSupplier(
                 swerve::getPose,
-                superstructure::getTurretTranslation,
+                superstructure::getRobotToTurret,
                 swerve::getRobotRelativeSpeeds,
                 targetPoseSupplier
         );

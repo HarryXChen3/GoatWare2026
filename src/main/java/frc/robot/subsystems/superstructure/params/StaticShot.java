@@ -2,6 +2,7 @@ package frc.robot.subsystems.superstructure.params;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -21,10 +22,13 @@ public class StaticShot implements ShotProvider<ShotProvider.Kind.Static> {
     @Override
     public ShotParameters getParameters(
             final Pose2d robotPose,
-            final Translation2d turretTranslation,
+            final Transform2d robotToTurret,
             final ChassisSpeeds robotRelativeSpeeds,
             final Pose2d targetPose
     ) {
+        final Translation2d turretTranslation = robotPose
+                .transformBy(robotToTurret)
+                .getTranslation();
         return new ShotParameters(
                 ShotParameters.getShot(
                         turretTranslation

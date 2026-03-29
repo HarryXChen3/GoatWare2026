@@ -130,12 +130,12 @@ public class Superstructure extends VirtualSubsystem {
         return shooter.getVelocityRotsPerSec();
     }
 
-    public Transform2d getOffsetFromCenter() {
+    public Transform2d getRobotToTurret() {
         return turret.getOffsetFromCenter();
     }
 
     public Translation2d getTurretTranslation(final Pose2d robotPose) {
-        return robotPose.plus(getOffsetFromCenter()).getTranslation();
+        return robotPose.plus(getRobotToTurret()).getTranslation();
     }
 
     public Pose3d[] getComponentPoses() {

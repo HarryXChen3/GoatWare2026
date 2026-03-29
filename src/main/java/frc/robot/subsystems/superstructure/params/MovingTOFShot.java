@@ -30,11 +30,11 @@ public final class MovingTOFShot implements ShotProvider<ShotProvider.Kind.Movin
 
     public static ChassisSpeeds getTurretFieldSpeeds(
             final Pose2d robotPose,
-            final Transform2d turretOffset,
+            final Transform2d robotToTurret,
             final ChassisSpeeds fieldRelativeSpeeds
     ) {
         final double omega = fieldRelativeSpeeds.omegaRadiansPerSecond;
-        final Translation2d rField = turretOffset
+        final Translation2d rField = robotToTurret
                 .getTranslation()
                 .rotateBy(robotPose.getRotation());
 
@@ -51,12 +51,12 @@ public final class MovingTOFShot implements ShotProvider<ShotProvider.Kind.Movin
     @Override
     public ShotParameters getParameters(
             final Pose2d robotPose,
-            final Translation2d turretTranslation,
+            final Transform2d robotToTurret,
             final ChassisSpeeds robotSpeeds,
             final Pose2d targetPose
     ) {
-        // the way the code is now is the version that works better in sim
-        // and the commented out code is the version that I think is more correct
+        // the way the code is now is the version that I think is more correct
+        // and the commented out code is an old version that seemed to work better in sim
         //  better in sim (also what we had before):
         //      1. turretOffset is calculated from the transform between the current turret translation
         //          and the lookahead robot pose, which is NOT actually the turretOffset,
@@ -67,28 +67,26 @@ public final class MovingTOFShot implements ShotProvider<ShotProvider.Kind.Movin
         //      1. turretOffset from current robot to current turret pose
         //      2. distance is between lookahead turret and target
 
-        final Pose2d offsetTurretPose = new Pose2d(turretTranslation, Rotation2d.kZero);
-//        final Transform2d turretOffset = offsetTurretPose.minus(robotPose);
-
+//        final Pose2d turretPose = robotPose.transformBy(robotToTurret);
         final Pose2d lookaheadRobotPose = robotPose.exp(new Twist2d(
                 robotSpeeds.vxMetersPerSecond * LookaheadSeconds,
                 robotSpeeds.vyMetersPerSecond * LookaheadSeconds,
                 robotSpeeds.omegaRadiansPerSecond * LookaheadSeconds
         ));
-        final Transform2d turretOffset = offsetTurretPose.minus(lookaheadRobotPose);
-        final Pose2d lookaheadTurretPose = lookaheadRobotPose.transformBy(turretOffset);
-//        final double distance = lookaheadTurretPose.getTranslation()
-//                .getDistance(targetPose.getTranslation());
-        final double distance = turretTranslation
+//        final Transform2d turretOffset = offsetTurretPose.minus(lookaheadRobotPose);
+        final Pose2d lookaheadTurretPose = lookaheadRobotPose.transformBy(robotToTurret);
+        final double distance = lookaheadTurretPose.getTranslation()
                 .getDistance(targetPose.getTranslation());
+//        final double distance = turretTranslation
+//                .getDistance(targetPose.getTranslation());
 
         final Rotation2d robotAngle = lookaheadRobotPose.getRotation();
         final ChassisSpeeds fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(robotSpeeds, robotAngle);
         final ChassisSpeeds turretFieldVelocity =
-                getTurretFieldSpeeds(lookaheadRobotPose, turretOffset, fieldSpeeds);
+                getTurretFieldSpeeds(lookaheadRobotPose, robotToTurret, fieldSpeeds);
 
         double timeOfFlight;
-        Pose2d futureTurretPose = offsetTurretPose;
+        Pose2d futureTurretPose = lookaheadTurretPose;
         double futureDistance = distance;
 
         for (int i = 0; i < 20; i++) {
@@ -99,15 +97,15 @@ public final class MovingTOFShot implements ShotProvider<ShotProvider.Kind.Movin
                     turretFieldVelocity.vyMetersPerSecond * timeOfFlight
             );
             futureTurretPose = new Pose2d(
-                    offsetTurretPose.getTranslation().plus(delta),
-                    offsetTurretPose.getRotation()
+                    lookaheadTurretPose.getTranslation().plus(delta),
+                    lookaheadTurretPose.getRotation()
             );
             futureDistance = futureTurretPose.getTranslation()
                     .getDistance(targetPose.getTranslation());
         }
 
         final double dt = deltaTime.get();
-        final Pose2d futureRobotPose = futureTurretPose.transformBy(turretOffset.inverse());
+        final Pose2d futureRobotPose = futureTurretPose.transformBy(robotToTurret.inverse());
         final Rotation2d turretAngle =
                 StaticShot.angleToTarget(futureRobotPose, futureTurretPose.getTranslation(), targetPose);
         final double turretAngleRads = turretAngle.getRadians();
