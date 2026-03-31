@@ -96,8 +96,6 @@ public class Turret extends SubsystemExt {
             case REPLAY, DISABLED -> new TurretIO() {};
         };
 
-        this.turretIO.config();
-
         RefreshAll.refreshAll();
 
         this.turretIO.updateInputs(inputs);
@@ -105,14 +103,13 @@ public class Turret extends SubsystemExt {
 
         final Rotation2d absolutePosition = CRT.findAbsolutePosition(
                 constants.drivenTurretGearTeeth(),
-                inputs.primaryCANcoderPositionRots,
-//                (0.8 * (80 / 13.0)) % 1,
+                inputs.primaryCANcoderAbsolutePositionRots,
+//                (80 / 13.0) % 1,
                 constants.primaryCANcoderGearTeeth(),
-                inputs.secondaryCANcoderPositionRots,
-//                (0.8 * ((80 / 13.0) * (13 / 17.0))) % 1,
+                inputs.secondaryCANcoderAbsolutePositionRots,
+//                ((80 / 13.0) * (13 / 17.0)) % 1,
                 constants.secondaryCANcoderGearTeeth()
         );
-        System.out.println("primary Cancoder: " + inputs.primaryCANcoderPositionRots);
         System.out.println("abs pos: " + absolutePosition.getRotations());
         this.turretIO.seedTurretPosition(absolutePosition);
     }

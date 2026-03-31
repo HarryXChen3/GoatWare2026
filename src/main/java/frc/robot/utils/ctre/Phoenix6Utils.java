@@ -89,7 +89,7 @@ public class Phoenix6Utils {
                 DriverStation.reportWarning(String.format(
                         "Attempt %d on device %d: %s",
                         i + 2, device.getDeviceID(), status.getName()
-                ), false);
+                ), true);
             }
         }
 
@@ -105,7 +105,7 @@ public class Phoenix6Utils {
                             device.getDeviceID(),
                             statusCode.getName()
                     ),
-                    false
+                    true
             );
         }
     }

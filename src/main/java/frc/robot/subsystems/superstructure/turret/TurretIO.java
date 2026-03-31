@@ -13,7 +13,10 @@ public interface TurretIO {
         public double motorTempCelsius = 0;
 
         public double primaryCANcoderPositionRots = 0;
+        public double primaryCANcoderAbsolutePositionRots = 0;
+
         public double secondaryCANcoderPositionRots = 0;
+        public double secondaryCANcoderAbsolutePositionRots = 0;
     }
 
     default void updateInputs(final TurretIOInputs inputs) {}
