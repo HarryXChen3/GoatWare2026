@@ -14,10 +14,6 @@ public interface SimConstants {
         double ConfigTimeoutSeconds = 0.2;
     }
 
-    interface Turret {
-        Translation3d OriginOffset = new Translation3d(-0.127, 0, 0.386);
-    }
-
     interface Hood {
         Translation3d TurretOffset = new Translation3d(0.121, 0, 0.054);
         Transform3d FuelExitOffset = new Transform3d(
@@ -26,6 +22,10 @@ public interface SimConstants {
                 Units.inchesToMeters(-2.125),
                 new Rotation3d(0, (-Math.PI / 2) + Units.degreesToRadians(10), 0)
         );
+    }
+
+    interface Turret {
+        Translation3d OriginOffset = new Translation3d(-0.127, 0, 0.386);
     }
 
     interface Shooter {

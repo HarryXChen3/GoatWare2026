@@ -348,10 +348,10 @@ public class Robot extends LoggedRobot {
         );
         Logger.recordOutput(
                 "Components",
-                superstructurePoses[0],
+                superstructurePoses[0], //turret
                 intakeSlidePoses[1],
                 intakeSlidePoses[0],
-                superstructurePoses[1],
+                superstructurePoses[1], //hood
                 climbPoses[0],
                 climbPoses[1]
         );

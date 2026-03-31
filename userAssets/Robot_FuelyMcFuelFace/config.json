@@ -24,7 +24,7 @@
         { "axis": "y", "degrees": 0 },
         { "axis": "z", "degrees": -90 }
       ],
-      "zeroedPosition": [-0.1265, 0, -0.355]
+      "zeroedPosition": [-0.1265, 0, -0.354]
     },
     {
       "zeroedRotations": [
