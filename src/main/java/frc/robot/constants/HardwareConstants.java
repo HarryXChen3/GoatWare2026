@@ -87,6 +87,8 @@ public class HardwareConstants {
                     ((double) drivenTurretGearTeeth) / drivingGearTeeth,
                     ((double) primaryCANcoderGearTeeth) / drivenTurretGearTeeth,
                     ((double) secondaryCANcoderGearTeeth) / drivenTurretGearTeeth,
+//                    ((double) primaryCANcoderGearTeeth) / drivenTurretGearTeeth
+//                            * ((double) secondaryCANcoderGearTeeth) / primaryCANcoderGearTeeth,
                     offsetFromCenter
             );
         }
@@ -97,10 +99,10 @@ public class HardwareConstants {
             14,
             15,
             16,
-            0.0,
-            0.0,
-            1.0,
-            -1.0,
+            -0.320,
+            0.340,
+            0.75,
+            -0.25,
             10,
             80,
             13,

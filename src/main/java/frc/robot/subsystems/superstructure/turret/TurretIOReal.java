@@ -104,13 +104,9 @@ public class TurretIOReal implements TurretIO {
         motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
         motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
-        motorConfiguration.Feedback.FeedbackRemoteSensorID = constants.primaryCANcoderId();
-        motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-        motorConfiguration.Feedback.RotorToSensorRatio =
-                constants.motorToGearboxGearing()
-                        * constants.gearboxToTurretGearing()
-                        * constants.primaryCANcoderGearing();
-        motorConfiguration.Feedback.SensorToMechanismRatio = 1 / constants.primaryCANcoderGearing();
+        motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+        motorConfiguration.Feedback.SensorToMechanismRatio = constants.motorToGearboxGearing()
+                * constants.gearboxToTurretGearing();
         motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.forwardLimitRots();

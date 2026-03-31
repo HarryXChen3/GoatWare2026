@@ -10,6 +10,7 @@ import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.commands.ext.SubsystemExt;
 import frc.robot.utils.commands.trigger.LoggedTrigger;
+import frc.robot.utils.ctre.RefreshAll;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.HashMap;
@@ -96,16 +97,23 @@ public class Turret extends SubsystemExt {
         };
 
         this.turretIO.config();
+
+        RefreshAll.refreshAll();
+
         this.turretIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
         final Rotation2d absolutePosition = CRT.findAbsolutePosition(
                 constants.drivenTurretGearTeeth(),
                 inputs.primaryCANcoderPositionRots,
+//                (0.8 * (80 / 13.0)) % 1,
                 constants.primaryCANcoderGearTeeth(),
                 inputs.secondaryCANcoderPositionRots,
+//                (0.8 * ((80 / 13.0) * (13 / 17.0))) % 1,
                 constants.secondaryCANcoderGearTeeth()
         );
+        System.out.println("primary Cancoder: " + inputs.primaryCANcoderPositionRots);
+        System.out.println("abs pos: " + absolutePosition.getRotations());
         this.turretIO.seedTurretPosition(absolutePosition);
     }
 
