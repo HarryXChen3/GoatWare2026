@@ -73,6 +73,8 @@ public class TurretIOReal implements TurretIO {
                 primaryCANcoderPosition,
                 secondaryCANcoderPosition
         );
+
+        config();
     }
 
     @Override
@@ -118,14 +120,20 @@ public class TurretIOReal implements TurretIO {
         final CANcoderConfiguration primaryCANcoderConfiguration = new CANcoderConfiguration();
         primaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
         primaryCANcoderConfiguration.MagnetSensor.MagnetOffset = constants.primaryCANcoderOffsetRots();
-        Phoenix6Utils.tryUntilOk(primaryCANcoder,
-                () -> primaryCANcoder.getConfigurator().apply(primaryCANcoderConfiguration));
+        primaryCANcoderConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
+        Phoenix6Utils.tryUntilOk(
+                primaryCANcoder,
+                () -> primaryCANcoder.getConfigurator().apply(primaryCANcoderConfiguration)
+        );
 
         final CANcoderConfiguration secondaryCANcoderConfiguration = new CANcoderConfiguration();
         secondaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         secondaryCANcoderConfiguration.MagnetSensor.MagnetOffset = constants.secondaryCANcoderOffsetRots();
-        Phoenix6Utils.tryUntilOk(secondaryCANcoder,
-                () -> secondaryCANcoder.getConfigurator().apply(secondaryCANcoderConfiguration));
+        secondaryCANcoderConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
+        Phoenix6Utils.tryUntilOk(
+                secondaryCANcoder,
+                () -> secondaryCANcoder.getConfigurator().apply(secondaryCANcoderConfiguration)
+        );
 
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
@@ -153,23 +161,7 @@ public class TurretIOReal implements TurretIO {
     @Override
     public void seedTurretPosition(final Rotation2d turretPosition) {
         final double turretPositionRots = turretPosition.getRotations();
-        final double primaryGearing = constants.primaryCANcoderGearing();
-        final double wrappedTurretPosition = MathUtil.inputModulus(turretPositionRots, 0, 1);
-        final double primaryAbsolutePosition = MathUtil.inputModulus(
-                primaryCANcoder.getAbsolutePosition().getValueAsDouble(),
-                0, 1
-        ) * primaryGearing;
-
-        if (!MathUtil.isNear(primaryAbsolutePosition, wrappedTurretPosition, 1e-6)) {
-            DriverStation.reportError(String.format(
-                    "Failed to seed turret position! Expected integer increment in position from: %.3f to %.3f.",
-                    primaryAbsolutePosition, turretPositionRots
-            ), true);
-            return;
-        }
-
-        // TODO: needs to try until OK, maybe needs more timeout
-        Phoenix6Utils.reportIfNotOk(motor, primaryCANcoder.setPosition(turretPositionRots / primaryGearing));
+        Phoenix6Utils.tryUntilOk(motor, 10, () -> motor.setPosition(turretPositionRots));
     }
 
     @Override

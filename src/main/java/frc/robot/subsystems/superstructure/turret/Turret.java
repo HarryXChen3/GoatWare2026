@@ -75,6 +75,8 @@ public class Turret extends SubsystemExt {
     private double positionSetpointRots;
     private double velocitySetpointRotsPerSec;
 
+    private boolean positionSeeded = false;
+
     public final LoggedTrigger atSetpoint = group.t(
             "AtSetpoint",
             () -> MathUtil.isNear(
@@ -95,23 +97,6 @@ public class Turret extends SubsystemExt {
             case SIM -> new TurretIOSim(constants);
             case REPLAY, DISABLED -> new TurretIO() {};
         };
-
-        RefreshAll.refreshAll();
-
-        this.turretIO.updateInputs(inputs);
-        Logger.processInputs(LogKey, inputs);
-
-        final Rotation2d absolutePosition = CRT.findAbsolutePosition(
-                constants.drivenTurretGearTeeth(),
-                inputs.primaryCANcoderAbsolutePositionRots,
-//                (80 / 13.0) % 1,
-                constants.primaryCANcoderGearTeeth(),
-                inputs.secondaryCANcoderAbsolutePositionRots,
-//                ((80 / 13.0) * (13 / 17.0)) % 1,
-                constants.secondaryCANcoderGearTeeth()
-        );
-        System.out.println("abs pos: " + absolutePosition.getRotations());
-        this.turretIO.seedTurretPosition(absolutePosition);
     }
 
     @Override
@@ -120,6 +105,19 @@ public class Turret extends SubsystemExt {
 
         turretIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
+
+        if (!positionSeeded && MathUtil.isNear(0, inputs.motorVelocityRotsPerSec, 1e-3)) {
+            final Rotation2d position = CRT.solve(
+                    constants.drivenTurretGearTeeth(),
+                    inputs.primaryCANcoderAbsolutePositionRots,
+                    constants.primaryCANcoderGearTeeth(),
+                    inputs.secondaryCANcoderAbsolutePositionRots,
+                    constants.secondaryCANcoderGearTeeth(),
+                    constants.forwardLimitRots()
+            );
+            turretIO.seedTurretPosition(position);
+            positionSeeded = true;
+        }
 
         final InternalGoal currentGoal;
         if (atSetpoint()) {
