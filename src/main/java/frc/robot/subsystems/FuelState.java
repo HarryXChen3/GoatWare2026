@@ -19,8 +19,8 @@ import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.superstructure.params.MovingTOFShot;
 import frc.robot.subsystems.superstructure.Superstructure;
+import frc.robot.subsystems.superstructure.params.MovingUtils;
 import frc.robot.utils.Container;
 import frc.robot.utils.commands.ext.CommandsExt;
 import frc.robot.utils.commands.trigger.LoggedTrigger;
@@ -156,7 +156,7 @@ public class FuelState extends VirtualSubsystem {
                                     ))
                                     .plus(SimConstants.Hood.FuelExitOffset);
 
-                            final ChassisSpeeds turretFieldSpeeds = MovingTOFShot.getTurretFieldSpeeds(
+                            final ChassisSpeeds turretFieldSpeeds = MovingUtils.getTurretFieldSpeeds(
                                     robotPose,
                                     superstructure.getTurretTranslation(robotPose),
                                     swerve.getFieldRelativeSpeeds()
