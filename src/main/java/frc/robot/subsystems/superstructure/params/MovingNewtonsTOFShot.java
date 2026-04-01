@@ -1,13 +1,22 @@
 package frc.robot.subsystems.superstructure.params;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import frc.robot.constants.Constants;
+import frc.robot.utils.control.DeltaTime;
 
 public class MovingNewtonsTOFShot implements ShotProvider<ShotProvider.Kind.Moving> {
     private static final double Epsilon = 0.001;
     private static final double VelocityTolerance = 0.005;
     private static final double LookaheadSeconds = 0.01;
+
+    private final DeltaTime deltaTime = new DeltaTime();
+    private final LinearFilter turretOmegaFilter =
+            LinearFilter.movingAverage((int)(0.1 / Constants.LOOP_PERIOD_SECONDS));
+    private double lastTurretAngleRads = 0;
 
     @Override
     public ShotParameters getParameters(
@@ -66,11 +75,21 @@ public class MovingNewtonsTOFShot implements ShotProvider<ShotProvider.Kind.Movi
             }
         }
 
+        final double dt = deltaTime.get();
+        final Rotation2d turretAngle = turretFieldAngle
+                .minus(robotAngle);
+        final double turretAngleRads = turretAngle.getRadians();
+        final double turretOmegaRadsPerSec = turretOmegaFilter.calculate(
+                MathUtil.angleModulus(turretAngleRads - lastTurretAngleRads)
+                        / dt
+        );
+        lastTurretAngleRads = turretAngleRads;
+
         return new ShotParameters(
                 ShotParameters.getShot(futureDistance),
                 turretFieldAngle
                         .minus(robotAngle),
-                Units.radiansToRotations(-robotSpeeds.omegaRadiansPerSecond)
+                Units.radiansToRotations(turretOmegaRadsPerSec)
         );
     }
 }
