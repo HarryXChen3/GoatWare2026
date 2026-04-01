@@ -59,6 +59,8 @@ public class ClimbIOReal implements ClimbIO {
                 motorTorqueCurrent,
                 motorDeviceTemp
         );
+
+        config();
     }
 
     @Override

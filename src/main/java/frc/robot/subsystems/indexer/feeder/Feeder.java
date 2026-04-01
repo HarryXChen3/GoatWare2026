@@ -80,8 +80,6 @@ public class Feeder extends SubsystemExt {
             case SIM -> new FeederIOSim(constants);
             case REPLAY, DISABLED -> new FeederIO() {};
         };
-
-        this.feederIO.config();
     }
 
     @Override

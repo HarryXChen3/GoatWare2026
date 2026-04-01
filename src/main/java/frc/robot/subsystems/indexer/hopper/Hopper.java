@@ -30,7 +30,7 @@ public class Hopper extends SubsystemExt {
     }
 
     private final HopperIO hopperIO;
-    private final HopperIOInputsAutoLogged inputs;
+    private final HopperIOInputsAutoLogged inputs = new HopperIOInputsAutoLogged();
 
     private ControlMode controlMode;
     private double setpointOutput;
@@ -42,9 +42,6 @@ public class Hopper extends SubsystemExt {
             case SIM -> new HopperIOSim(constants);
             case REPLAY, DISABLED -> new HopperIO() {};
         };
-
-        this.inputs = new HopperIOInputsAutoLogged();
-        this.hopperIO.config();
     }
 
     @Override

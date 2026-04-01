@@ -55,6 +55,8 @@ public class HopperIOReal implements HopperIO {
                 motorTorqueCurrent,
                 motorDeviceTemp
         );
+
+        config();
     }
 
     @Override

@@ -80,8 +80,6 @@ public class IntakeRollers extends SubsystemExt {
             case SIM -> new IntakeRollersIOSim(constants);
             case REPLAY, DISABLED -> new IntakeRollersIO() {};
         };
-
-        this.intakeRollersIO.config();
     }
 
     @Override

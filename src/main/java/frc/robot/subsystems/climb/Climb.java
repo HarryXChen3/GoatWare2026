@@ -69,7 +69,7 @@ public class Climb extends SubsystemExt {
     }
 
     private final ClimbIO climbIO;
-    private final ClimbIOInputsAutoLogged inputs;
+    private final ClimbIOInputsAutoLogged inputs = new ClimbIOInputsAutoLogged();
 
     private InternalGoal desiredGoal = InternalGoal.STOW;
     private InternalGoal currentGoal = InternalGoal.NONE;
@@ -83,9 +83,6 @@ public class Climb extends SubsystemExt {
             case SIM -> new ClimbIOSim(constants);
             case REPLAY, DISABLED -> new ClimbIO() {};
         };
-
-        this.inputs = new ClimbIOInputsAutoLogged();
-        this.climbIO.config();
     }
 
     @Override

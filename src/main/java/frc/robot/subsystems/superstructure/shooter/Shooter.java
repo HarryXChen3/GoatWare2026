@@ -82,8 +82,6 @@ public class Shooter extends SubsystemExt {
             case SIM -> new ShooterIOSim(constants);
             case REPLAY, DISABLED -> new ShooterIO() {};
         };
-
-        this.shooterIO.config();
     }
 
     @Override

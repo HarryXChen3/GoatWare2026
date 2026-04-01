@@ -100,6 +100,8 @@ public class FeederIOSim implements FeederIO {
                 tofDetected
         );
 
+        config();
+
         final Notifier simUpdateNotifier = new Notifier(() -> {
             final double dt = deltaTime.get();
             motorSim.update(dt);

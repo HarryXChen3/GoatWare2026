@@ -61,6 +61,8 @@ public class FeederIOReal implements FeederIO {
                 motorDeviceTemp,
                 tofDetected
         );
+
+        config();
     }
 
     @Override

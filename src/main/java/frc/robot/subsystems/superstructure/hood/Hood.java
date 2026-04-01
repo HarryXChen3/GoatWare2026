@@ -80,8 +80,6 @@ public class Hood extends SubsystemExt {
             case SIM -> new HoodIOSim(constants);
             case REPLAY, DISABLED -> new HoodIO() {};
         };
-
-        this.hoodIO.config();
     }
 
     @Override

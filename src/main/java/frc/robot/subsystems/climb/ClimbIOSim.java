@@ -101,6 +101,8 @@ public class ClimbIOSim implements ClimbIO {
                 motorDeviceTemp
         );
 
+        config();
+
         final Notifier simUpdateNotifier = new Notifier(() -> {
             final double dt = deltaTime.get();
             motorSim.update(dt);
