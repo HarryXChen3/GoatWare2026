@@ -14,9 +14,10 @@ import frc.robot.subsystems.FuelState;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.superstructure.MovingTOFShot;
-import frc.robot.subsystems.superstructure.ShotParameters;
-import frc.robot.subsystems.superstructure.StaticShot;
+import frc.robot.subsystems.superstructure.params.MovingTOFShot;
+import frc.robot.subsystems.superstructure.params.ShotParameters;
+import frc.robot.subsystems.superstructure.params.ShotProvider;
+import frc.robot.subsystems.superstructure.params.StaticShot;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.vision.PhotonVision;
 import frc.robot.utils.commands.trigger.LoggedTrigger;
@@ -38,8 +39,11 @@ public class Autos {
 
     private final AutoFactory autoFactory;
 
+    private final ShotProvider<ShotProvider.Kind.Static> staticShotProvider;
     private final Supplier<ShotParameters> staticShot;
-    private final Supplier<ShotParameters> movingTOFShot;
+
+    private final ShotProvider<ShotProvider.Kind.Moving> movingShotProvider;
+    private final Supplier<ShotParameters> movingShot;
 
     private final LoggedTrigger robotStopped;
     private final LoggedTrigger targetIsHub;
@@ -82,21 +86,23 @@ public class Autos {
                 }
         );
 
+        this.staticShotProvider = new StaticShot();
         this.staticShot = staticParameters(swerve::getPose);
-        this.movingTOFShot = MovingTOFShot.parametersSupplier(
-                swerve::getPose,
-                superstructure::getTurretTranslation,
-                swerve::getRobotRelativeSpeeds,
-                FieldConstants::getHubPose
-        );
 
-        this.robotStopped = group.t("RobotStopped",
+        this.movingShotProvider = new MovingTOFShot();
+        this.movingShot = movingParameters(FieldConstants::getHubPose);
+
+        this.robotStopped = group.t(
+                "RobotStopped",
                 () -> ShootCommands.linearSpeed(swerve.getFieldRelativeSpeeds()) <= 0.01
         );
-        this.targetIsHub = group.t("TargetIsHub",
-                () -> ShootCommands.getTarget(swerve.getPose()) == ShootCommands.Target.HUB
+        this.targetIsHub = group.t(
+                "TargetIsHub",
+                () -> ShootCommands.getTarget(superstructure.getTurretTranslation(swerve.getPose()))
+                        == ShootCommands.Target.HUB
         );
-        this.turretSafe = group.t("TurretSafe",
+        this.turretSafe = group.t(
+                "TurretSafe",
                 () -> {
                     final double safeXClose = FieldConstants.getTurretSafeXCloseBoundary();
                     final double safeXFar = FieldConstants.getTurretSafeXFarBoundary();
@@ -118,11 +124,20 @@ public class Autos {
     }
 
     private Supplier<ShotParameters> staticParameters(final Supplier<Pose2d> robotPoseSupplier) {
-        return StaticShot.parametersSupplier(
+        return staticShotProvider.parametersSupplier(
                 robotPoseSupplier,
-                superstructure::getTurretTranslation,
+                superstructure::getRobotToTurret,
                 swerve::getRobotRelativeSpeeds,
                 FieldConstants::getHubPose
+        );
+    }
+
+    private Supplier<ShotParameters> movingParameters(final Supplier<Pose2d> targetPoseSupplier) {
+        return movingShotProvider.parametersSupplier(
+                swerve::getPose,
+                superstructure::getRobotToTurret,
+                swerve::getRobotRelativeSpeeds,
+                targetPoseSupplier
         );
     }
 
@@ -183,7 +198,7 @@ public class Autos {
                         )
                 ).onlyWhile(fuelState.hasFuel
                         .or(intake.isIntaking)),
-                superstructure.runParameters(movingTOFShot)
+                superstructure.runParameters(movingShot)
                         .onlyIf(turretSafe)
         ).withName("ShootMovingTOF");
     }
@@ -200,14 +215,8 @@ public class Autos {
                         )
                 ).onlyWhile(fuelState.hasFuel
                         .or(intake.isIntaking)),
-                superstructure.runParameters(
-                        MovingTOFShot.parametersSupplier(
-                                swerve::getPose,
-                                superstructure::getTurretTranslation,
-                                swerve::getRobotRelativeSpeeds,
-                                () -> ferryTo
-                        )
-                ).onlyIf(turretSafe)
+                superstructure.runParameters(movingParameters(() -> ferryTo))
+                        .onlyIf(turretSafe)
         ).withName("ShootMovingTOF");
     }
 
@@ -314,7 +323,7 @@ public class Autos {
                                         .and(turretSafe)),
                                 ferryToPoseMovingTOF(FieldConstants.getFerryLeft())
                                         .until(targetIsHub.or(turretSafe.negate())),
-                                superstructure.runParametersHoodStowed(movingTOFShot)
+                                superstructure.runParametersHoodStowed(movingShot)
                                         .until(targetIsHub.and(turretSafe)),
                                 shootMovingTOF()
                         )
