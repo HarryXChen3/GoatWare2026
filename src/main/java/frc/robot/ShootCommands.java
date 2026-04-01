@@ -1,6 +1,7 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -39,6 +40,7 @@ public class ShootCommands extends VirtualSubsystem {
     private final FuelState fuelState;
     private final Superstructure superstructure;
 
+    private final Supplier<Target> targetSupplier;
     private final Supplier<Pose2d> targetPoseSupplier;
 
     private final ShotProvider<ShotProvider.Kind.Static> staticShotProvider;
@@ -60,6 +62,7 @@ public class ShootCommands extends VirtualSubsystem {
         this.fuelState = fuelState;
         this.superstructure = superstructure;
 
+        this.targetSupplier = () -> getTarget(superstructure.getTurretTranslation(swerve.getPose()));
         this.targetPoseSupplier = getTargetPoseSupplier();
 
         this.staticShotProvider = new StaticShot();
@@ -81,7 +84,7 @@ public class ShootCommands extends VirtualSubsystem {
 
     @Override
     public void periodic() {
-        Logger.recordOutput(LogKey + "/Target", getTarget(swerve.getPose()));
+        Logger.recordOutput(LogKey + "/Target", targetSupplier.get());
     }
 
     public static double linearSpeed(final ChassisSpeeds speeds) {
@@ -91,21 +94,21 @@ public class ShootCommands extends VirtualSubsystem {
         );
     }
 
-    public static Target getTarget(final Pose2d robotPose) {
-        final double robotX = robotPose.getX();
-        final double robotY = robotPose.getY();
+    public static Target getTarget(final Translation2d turretTranslation) {
+        final double turretX = turretTranslation.getX();
+        final double turretY = turretTranslation.getY();
 
         final double ferryXBoundary = FieldConstants.getFerryXBoundary();
         final boolean isRed = Robot.IsRedAlliance.getAsBoolean();
         final boolean canFerryX = isRed
-                ? robotX <= ferryXBoundary
-                : robotX >= ferryXBoundary;
+                ? turretX <= ferryXBoundary
+                : turretX >= ferryXBoundary;
 
         final double ferryLeftBoundary = FieldConstants.getFerryLeftYBoundary();
         final double ferryRightBoundary = FieldConstants.getFerryRightYBoundary();
         final boolean canFerryY = isRed
-                ? (robotY >= ferryLeftBoundary || robotY <= ferryRightBoundary)
-                : (robotY <= ferryLeftBoundary || robotY >= ferryRightBoundary);
+                ? (turretY >= ferryLeftBoundary || turretY <= ferryRightBoundary)
+                : (turretY <= ferryLeftBoundary || turretY >= ferryRightBoundary);
 
         return canFerryX
                 ? (canFerryY ? Target.FERRY : Target.NONE_FERRY_BLOCKED)
@@ -135,7 +138,10 @@ public class ShootCommands extends VirtualSubsystem {
     }
 
     private Supplier<Pose2d> getTargetPoseSupplier() {
-        return getTargetPoseSupplier(swerve::getPose, ShootCommands::getTarget);
+        return getTargetPoseSupplier(
+                swerve::getPose,
+                robotPose -> ShootCommands.getTarget(superstructure.getTurretTranslation(robotPose))
+        );
     }
 
     public Command trackTarget() {
@@ -166,10 +172,9 @@ public class ShootCommands extends VirtualSubsystem {
     }
 
     public Command stopAndShoot() {
-        final Supplier<Pose2d> targetPoseSupplier = getTargetPoseSupplier();
         final LoggedTrigger targetValid = group.t(
                 "TargetValid",
-                () -> switch (getTarget(swerve.getPose())) {
+                () -> switch (targetSupplier.get()) {
                     case HUB, FERRY -> true;
                     case NONE_FERRY_BLOCKED -> false;
                 });
@@ -194,7 +199,7 @@ public class ShootCommands extends VirtualSubsystem {
     public Command shoot() {
         final LoggedTrigger targetValid = group.t(
                 "TargetValid",
-                () -> switch (getTarget(swerve.getPose())) {
+                () -> switch (targetSupplier.get()) {
                     case HUB, FERRY -> true;
                     case NONE_FERRY_BLOCKED -> false;
                 });

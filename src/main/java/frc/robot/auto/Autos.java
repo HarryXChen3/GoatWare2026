@@ -92,13 +92,17 @@ public class Autos {
         this.movingShotProvider = new MovingTOFShot();
         this.movingShot = movingParameters(FieldConstants::getHubPose);
 
-        this.robotStopped = group.t("RobotStopped",
+        this.robotStopped = group.t(
+                "RobotStopped",
                 () -> ShootCommands.linearSpeed(swerve.getFieldRelativeSpeeds()) <= 0.01
         );
-        this.targetIsHub = group.t("TargetIsHub",
-                () -> ShootCommands.getTarget(swerve.getPose()) == ShootCommands.Target.HUB
+        this.targetIsHub = group.t(
+                "TargetIsHub",
+                () -> ShootCommands.getTarget(superstructure.getTurretTranslation(swerve.getPose()))
+                        == ShootCommands.Target.HUB
         );
-        this.turretSafe = group.t("TurretSafe",
+        this.turretSafe = group.t(
+                "TurretSafe",
                 () -> {
                     final double safeXClose = FieldConstants.getTurretSafeXCloseBoundary();
                     final double safeXFar = FieldConstants.getTurretSafeXFarBoundary();
