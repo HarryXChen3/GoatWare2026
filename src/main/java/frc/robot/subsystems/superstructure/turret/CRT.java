@@ -5,9 +5,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 
 public class CRT {
     public static long[] bezout(final long a, final long b) {
-        long old_r = a, r = b;
-        long old_s = 1, s = 0;
-        long old_t = 0, t = 1;
+        long old_r = a;
+        long r = b;
+
+        long old_s = 1;
+        long s = 0;
+
+        long old_t = 0;
+        long t = 1;
 
         while (r != 0) {
             long quotient = old_r / r;

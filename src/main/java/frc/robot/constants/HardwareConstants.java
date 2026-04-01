@@ -86,7 +86,6 @@ public class HardwareConstants {
                     motorToGearboxGearing,
                     ((double) drivenTurretGearTeeth) / drivingGearTeeth,
                     ((double) primaryCANcoderGearTeeth) / drivenTurretGearTeeth,
-//                    ((double) secondaryCANcoderGearTeeth) / drivenTurretGearTeeth,
                     ((double) primaryCANcoderGearTeeth) / drivenTurretGearTeeth
                             * ((double) secondaryCANcoderGearTeeth) / primaryCANcoderGearTeeth,
                     offsetFromCenter
