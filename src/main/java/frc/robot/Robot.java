@@ -2,6 +2,9 @@ package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.hal.AllianceStationID;
+import edu.wpi.first.math.MathShared;
+import edu.wpi.first.math.MathSharedStore;
+import edu.wpi.first.math.MathUsageId;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.event.EventLoop;
@@ -189,7 +192,7 @@ public class Robot extends LoggedRobot {
         // disable joystick not found warnings when in sim
         DriverStation.silenceJoystickConnectionWarning(Constants.CURRENT_MODE != Constants.RobotMode.REAL);
 
-        // Adjust loop overrun warning timeout
+        // adjust loop overrun warning timeout
         try {
             final Field watchdogField = IterativeRobotBase.class.getDeclaredField("m_watchdog");
             watchdogField.setAccessible(true);
@@ -200,6 +203,29 @@ public class Robot extends LoggedRobot {
             DriverStation.reportWarning("Failed to disable loop overrun warnings.", false);
         }
         CommandScheduler.getInstance().setPeriod(LoopOverrunWarningTimeoutSeconds);
+
+        // silence `Rotation2d` warnings
+        var mathShared = MathSharedStore.getMathShared();
+        MathSharedStore.setMathShared(
+                new MathShared() {
+                    @Override
+                    public void reportError(final String error, final StackTraceElement[] stackTrace) {
+                        if (error.startsWith("x and y components of Rotation2d are zero")) {
+                            return;
+                        }
+                        mathShared.reportError(error, stackTrace);
+                    }
+
+                    @Override
+                    public void reportUsage(final MathUsageId id, int count) {
+                        mathShared.reportUsage(id, count);
+                    }
+
+                    @Override
+                    public double getTimestamp() {
+                        return mathShared.getTimestamp();
+                    }
+                });
 
         switch (Constants.CURRENT_MODE) {
             case REAL -> {
