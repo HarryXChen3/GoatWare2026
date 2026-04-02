@@ -315,6 +315,7 @@ public class Autos {
                 runStartingTrajectory(upFerryAndScoot_0),
                 runOnce(fuelState::setSimFuelPreloaded)
         ));
+
         upFerryAndScoot_0.active().whileTrue(
                 parallel(
                         intake.intake(),
