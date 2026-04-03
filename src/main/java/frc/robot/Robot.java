@@ -205,7 +205,7 @@ public class Robot extends LoggedRobot {
         CommandScheduler.getInstance().setPeriod(LoopOverrunWarningTimeoutSeconds);
 
         // silence `Rotation2d` warnings
-        var mathShared = MathSharedStore.getMathShared();
+        final MathShared mathShared = MathSharedStore.getMathShared();
         MathSharedStore.setMathShared(
                 new MathShared() {
                     @Override
