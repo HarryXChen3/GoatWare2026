@@ -167,6 +167,10 @@ public class Robot extends LoggedRobot {
     private final LoggedTrigger hubActive =
             group.t("HubActive", () -> AllianceShift.get().hubStatus() == AllianceShift.HubStatus.ACTIVE);
 
+    // TODO: temp
+    private boolean attemptedAutoWarmup = false;
+    private boolean autoIsHot = false;
+
     public Robot() {
         if ((RobotBase.isReal() && Constants.CURRENT_MODE != Constants.RobotMode.REAL) ||
                 (RobotBase.isSimulation() && Constants.CURRENT_MODE == Constants.RobotMode.REAL)) {
@@ -316,6 +320,9 @@ public class Robot extends LoggedRobot {
                         .getTranslation()
                         .getDistance(superstructure.getTurretTranslation(swerve.getPose()))
         );
+
+        Logger.recordOutput("AttemptedAutoWarmup", attemptedAutoWarmup);
+        Logger.recordOutput("AutoIsHot", autoIsHot);
     }
 
     @Override
@@ -399,6 +406,20 @@ public class Robot extends LoggedRobot {
 
     public void configureAutos() {
         autonomousEnabled.whileTrue(Commands.deferredProxy(() -> autoChooser.getSelected().cmd()));
+        CommandScheduler.getInstance().schedule(
+                Commands.parallel(
+                        Commands.runOnce(() -> attemptedAutoWarmup = true),
+                        autos.warmup()
+                                .finallyDo(interrupted -> {
+                                    if (!interrupted) {
+                                        autoIsHot = true;
+                                    }
+                                })
+                )
+                        .onlyIf(disabled)
+                        .onlyWhile(disabled)
+                        .ignoringDisable(true)
+        );
 
         autoChooser.addAutoOption(new AutoOption(
                 "UpAndAtEm",
