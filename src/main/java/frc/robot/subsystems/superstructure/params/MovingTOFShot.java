@@ -4,7 +4,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Constants;
 import frc.robot.utils.control.DeltaTime;
 
@@ -14,12 +13,12 @@ public final class MovingTOFShot implements ShotProvider<ShotProvider.Kind.Movin
     private final DeltaTime deltaTime = new DeltaTime();
     private final LinearFilter turretOmegaFilter =
             LinearFilter.movingAverage((int)(0.1 / Constants.LOOP_PERIOD_SECONDS));
-    private double lastTurretAngleRads = 0;
+    private double lastRobotTargetAngleRads = 0;
 
     @Override
     public ShotParameters getParameters(
             final Pose2d robotPose,
-            final Transform2d robotToTurret,
+            final Transform2d robotToShooter,
             final ChassisSpeeds robotSpeeds,
             final Pose2d targetPose
     ) {
@@ -28,49 +27,49 @@ public final class MovingTOFShot implements ShotProvider<ShotProvider.Kind.Movin
                 robotSpeeds.vyMetersPerSecond * LookaheadSeconds,
                 robotSpeeds.omegaRadiansPerSecond * LookaheadSeconds
         ));
-        final Pose2d lookaheadTurretPose = lookaheadRobotPose.transformBy(robotToTurret);
-        final double distance = lookaheadTurretPose.getTranslation()
+        final Pose2d lookaheadShooterPose = lookaheadRobotPose.transformBy(robotToShooter);
+        final double distance = lookaheadShooterPose.getTranslation()
                 .getDistance(targetPose.getTranslation());
 
         final Rotation2d robotAngle = lookaheadRobotPose.getRotation();
         final ChassisSpeeds fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(robotSpeeds, robotAngle);
-        final ChassisSpeeds turretFieldVelocity =
-                MovingUtils.getTurretFieldSpeeds(lookaheadRobotPose, robotToTurret, fieldSpeeds);
+        final ChassisSpeeds shooterFieldVelocity =
+                MovingUtils.getShooterFieldSpeeds(lookaheadRobotPose, robotToShooter, fieldSpeeds);
 
         double timeOfFlight;
-        Pose2d futureTurretPose = lookaheadTurretPose;
+        Pose2d futureShooterPose = lookaheadShooterPose;
         double futureDistance = distance;
 
         for (int i = 0; i < 20; i++) {
             timeOfFlight = ShotParameters.getTimeOfFlight(futureDistance);
 
             final Translation2d delta = new Translation2d(
-                    turretFieldVelocity.vxMetersPerSecond * timeOfFlight,
-                    turretFieldVelocity.vyMetersPerSecond * timeOfFlight
+                    shooterFieldVelocity.vxMetersPerSecond * timeOfFlight,
+                    shooterFieldVelocity.vyMetersPerSecond * timeOfFlight
             );
-            futureTurretPose = new Pose2d(
-                    lookaheadTurretPose.getTranslation().plus(delta),
-                    lookaheadTurretPose.getRotation()
+            futureShooterPose = new Pose2d(
+                    lookaheadShooterPose.getTranslation().plus(delta),
+                    lookaheadShooterPose.getRotation()
             );
-            futureDistance = futureTurretPose.getTranslation()
+            futureDistance = futureShooterPose.getTranslation()
                     .getDistance(targetPose.getTranslation());
         }
 
         final double dt = deltaTime.get();
-        final Pose2d futureRobotPose = futureTurretPose.transformBy(robotToTurret.inverse());
-        final Rotation2d turretAngle =
-                StaticShot.angleToTarget(futureRobotPose, futureTurretPose.getTranslation(), targetPose);
-        final double turretAngleRads = turretAngle.getRadians();
-        final double turretOmegaRadsPerSec = turretOmegaFilter.calculate(
-                MathUtil.angleModulus(turretAngleRads - lastTurretAngleRads)
+        final Pose2d futureRobotPose = futureShooterPose.transformBy(robotToShooter.inverse());
+        final Rotation2d robotTargetAngle =
+                StaticShot.anglePointingShooter(futureRobotPose, robotToShooter, targetPose);
+        final double robotTargetAngleRads = robotTargetAngle.getRadians();
+        final double robotOmegaRadsPerSec = turretOmegaFilter.calculate(
+                MathUtil.angleModulus(robotTargetAngleRads - lastRobotTargetAngleRads)
                         / dt
         );
-        lastTurretAngleRads = turretAngleRads;
+        lastRobotTargetAngleRads = robotTargetAngleRads;
 
         return new ShotParameters(
                 ShotParameters.getShot(futureDistance),
-                turretAngle,
-                Units.radiansToRotations(turretOmegaRadsPerSec)
+                robotTargetAngle,
+                robotOmegaRadsPerSec
         );
     }
 }

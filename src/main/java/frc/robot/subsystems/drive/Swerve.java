@@ -125,6 +125,7 @@ public class Swerve extends SubsystemExt {
     public final LoggedTrigger atHeadingSetpoint;
     private boolean headingControllerActive = false;
     private Rotation2d headingTarget = Rotation2d.kZero;
+    private double headingVelocityTargetRadsPerSec = 0;
     private final PIDController headingController;
 
     public final LoggedTrigger atHolonomicDrivePose;
@@ -203,9 +204,9 @@ public class Swerve extends SubsystemExt {
                                 headingTarget.getRadians(),
                                 getPose().getRotation().getRadians(),
                                 Units.degreesToRadians(3)
-                        ) &&
-                        MathUtil.isNear(
-                                0,
+                        )
+                        && MathUtil.isNear(
+                                headingVelocityTargetRadsPerSec,
                                 getRobotRelativeSpeeds().omegaRadiansPerSecond,
                                 Units.degreesToRadians(12)
                         )
@@ -588,7 +589,8 @@ public class Swerve extends SubsystemExt {
     public Command teleopFacingAngle(
             final DoubleSupplier xSpeedSupplier,
             final DoubleSupplier ySpeedSupplier,
-            final Supplier<Rotation2d> rotationTargetSupplier
+            final Supplier<Rotation2d> rotationTargetSupplier,
+            final DoubleSupplier rotationAngularVelocitySupplier
     ) {
         return instantRun(
                 () -> {
@@ -597,20 +599,22 @@ public class Swerve extends SubsystemExt {
                 },
                 () -> {
                     final SwerveSpeed.Speeds swerveSpeed = SwerveSpeed.getSwerveSpeed();
-
                     final Translation2d translationInput = ControllerUtils.calculateLinearVelocity(
                             -xSpeedSupplier.getAsDouble(),
                             -ySpeedSupplier.getAsDouble(),
                             0.01
                     );
 
-                    this.headingTarget = rotationTargetSupplier.get();
+                    headingTarget = rotationTargetSupplier.get();
+                    headingVelocityTargetRadsPerSec = rotationAngularVelocitySupplier.getAsDouble();
+
                     driveFieldRelative(
                             translationInput.getX()
                                     * swerveSpeed.getTranslationSpeed(),
                             translationInput.getY()
                                     * swerveSpeed.getTranslationSpeed(),
-                            headingController.calculate(getYaw().getRadians(), headingTarget.getRadians()),
+                            headingVelocityTargetRadsPerSec
+                                    + headingController.calculate(getYaw().getRadians(), headingTarget.getRadians()),
                             SwerveRequest.ForwardPerspectiveValue.OperatorPerspective
                     );
                 }

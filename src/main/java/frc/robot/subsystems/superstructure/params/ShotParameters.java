@@ -6,11 +6,16 @@ import edu.wpi.first.math.interpolation.Interpolatable;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.utils.Container;
+
+import java.util.function.Supplier;
 
 public record ShotParameters(
         Shooter shooter,
-        Rotation2d turretAngle,
-        double turretVelocityRotsPerSec
+        Rotation2d robotAngle,
+        double robotOmegaRadsPerSec
 ) {
     private static final InterpolatingTreeMap<Double, Shooter> ShotMap =
             new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Shooter::interpolate);
@@ -66,5 +71,27 @@ public record ShotParameters(
                     )
             );
         }
+    }
+
+    public record CachedShot(Supplier<ShotParameters> shot, Command clear) implements Supplier<ShotParameters> {
+        @Override
+        public ShotParameters get() {
+            return shot.get();
+        }
+    }
+
+    public static CachedShot getCached(final Supplier<ShotParameters> shot) {
+        final Container<ShotParameters> parameters = Container.empty();
+        final Supplier<ShotParameters> cached = () -> {
+            if (parameters.hasValue()) {
+                return parameters.get();
+            }
+
+            final ShotParameters params = shot.get();
+            parameters.set(params);
+            return params;
+        };
+
+        return new CachedShot(cached, Commands.run(parameters::clear));
     }
 }

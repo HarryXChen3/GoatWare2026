@@ -43,7 +43,7 @@ public class MovingNewtonsTOFShot implements ShotProvider<ShotProvider.Kind.Movi
         final Rotation2d robotAngle = lookaheadRobotPose.getRotation();
         final ChassisSpeeds fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(robotSpeeds, robotAngle);
         final ChassisSpeeds turretFieldSpeeds =
-                MovingUtils.getTurretFieldSpeeds(lookaheadRobotPose, robotToTurret, fieldSpeeds);
+                MovingUtils.getShooterFieldSpeeds(lookaheadRobotPose, robotToTurret, fieldSpeeds);
 
         final Translation2d targetVelocity = targetDirection.times(initialVelocity);
         final Translation2d turretVelocity = new Translation2d(

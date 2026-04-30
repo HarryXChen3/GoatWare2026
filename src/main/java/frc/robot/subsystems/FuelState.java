@@ -168,9 +168,9 @@ public class FuelState extends VirtualSubsystem {
                                             Rotation3d.kZero
                                     ));
 
-                            final ChassisSpeeds turretFieldSpeeds = MovingUtils.getTurretFieldSpeeds(
+                            final ChassisSpeeds turretFieldSpeeds = MovingUtils.getShooterFieldSpeeds(
                                     robotPose,
-                                    superstructure.getShooterPose(robotPose),
+                                    superstructure.getRobotToShooter(),
                                     swerve.getFieldRelativeSpeeds()
                             );
 

@@ -1,14 +1,17 @@
 package frc.robot.subsystems.superstructure;
 
-import edu.wpi.first.math.geometry.*;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.constants.SimConstants;
 import frc.robot.subsystems.superstructure.hood.Hood;
+import frc.robot.subsystems.superstructure.params.ShotParameters;
 import frc.robot.subsystems.superstructure.shooter.Shooter;
-import frc.robot.subsystems.superstructure.turret.Turret;
 import frc.robot.utils.Container;
 import frc.robot.utils.commands.trigger.LoggedTrigger;
 import frc.robot.utils.subsystems.VirtualSubsystem;
@@ -23,17 +26,15 @@ public class Superstructure extends VirtualSubsystem {
     protected static final String LogKey = "Superstructure";
 
     public enum Goal {
-        STOW(Hood.Goal.STOW, Shooter.Goal.IDLE, Turret.Goal.STOW),
-        CLIMB(Hood.Goal.STOW, Shooter.Goal.OFF, Turret.Goal.CLIMB);
+        STOW(Hood.Goal.STOW, Shooter.Goal.IDLE),
+        CLIMB(Hood.Goal.STOW, Shooter.Goal.OFF);
 
         public final Hood.Goal hoodGoal;
         public final Shooter.Goal shooterGoal;
-        public final Turret.Goal turretGoal;
 
-        Goal(final Hood.Goal hoodGoal, final Shooter.Goal shooterGoal, final Turret.Goal turretGoal) {
+        Goal(final Hood.Goal hoodGoal, final Shooter.Goal shooterGoal) {
             this.hoodGoal = hoodGoal;
             this.shooterGoal = shooterGoal;
-            this.turretGoal = turretGoal;
         }
     }
 
@@ -68,7 +69,6 @@ public class Superstructure extends VirtualSubsystem {
 
     private final LoggedTrigger.Group group = LoggedTrigger.Group.from(LogKey);
 
-    private final Turret turret;
     private final Shooter shooter;
     private final Hood hood;
 
@@ -77,8 +77,7 @@ public class Superstructure extends VirtualSubsystem {
 
     public final LoggedTrigger safeForTrench;
 
-    public Superstructure(final Turret turret, final Shooter shooter, final Hood hood) {
-        this.turret = turret;
+    public Superstructure(final Shooter shooter, final Hood hood) {
         this.shooter = shooter;
         this.hood = hood;
 
@@ -89,7 +88,7 @@ public class Superstructure extends VirtualSubsystem {
     public void periodic() {
         final double superstructurePeriodicUpdateStart = Timer.getFPGATimestamp();
 
-        if (hood.atSetpoint() && shooter.atSetpoint() && turret.atSetpoint()) {
+        if (hood.atSetpoint() && shooter.atSetpoint()) {
             currentGoal = desiredGoal;
         } else {
             currentGoal = InternalGoal.NONE;
@@ -106,30 +105,21 @@ public class Superstructure extends VirtualSubsystem {
         );
     }
 
-    public Transform2d getOffsetFromCenter() {
-        return turret.getOffsetFromCenter();
+    public Transform2d getRobotToShooter() {
+        return shooter.getOffsetFromCenter();
     }
 
-    public Translation2d getTurretTranslation(final Pose2d robotPose) {
-        return robotPose.plus(getOffsetFromCenter()).getTranslation();
+    public Pose2d getShooterPose(final Pose2d robotPose) {
+        return robotPose.plus(getRobotToShooter());
     }
 
     public Pose3d[] getComponentPoses() {
-        final Pose3d turretPose = new Pose3d(
-                SimConstants.Turret.OriginOffset,
-                new Rotation3d(turret.getPosition())
+        final Pose3d hoodPose = new Pose3d(
+                SimConstants.Hood.OriginOffset,
+                new Rotation3d(0, -hood.getPosition().getRadians(), 0)
         );
 
-        final Pose3d hoodPose = turretPose
-                .plus(new Transform3d(
-                        SimConstants.Hood.TurretOffset,
-                        new Rotation3d(0, hood.getPosition().getRadians(), 0)
-                ));
-
-        return new Pose3d[] {
-                turretPose,
-                hoodPose
-        };
+        return new Pose3d[] {hoodPose};
     }
 
     public double getShooterVelocityRotsPerSec() {
@@ -166,8 +156,7 @@ public class Superstructure extends VirtualSubsystem {
         return toGoalLike(
                 InternalGoal.fromGoal(goal),
                 hood.toGoal(goal.hoodGoal),
-                shooter.toGoal(goal.shooterGoal),
-                turret.toGoal(goal.turretGoal)
+                shooter.toGoal(goal.shooterGoal)
         );
     }
 
@@ -175,8 +164,7 @@ public class Superstructure extends VirtualSubsystem {
         return Commands.parallel(
                 updateDesiredGoal(InternalGoal.fromGoal(goal)),
                 hood.runGoal(goal.hoodGoal),
-                shooter.runGoal(goal.shooterGoal),
-                turret.runGoal(goal.turretGoal)
+                shooter.runGoal(goal.shooterGoal)
         );
     }
 
@@ -201,7 +189,6 @@ public class Superstructure extends VirtualSubsystem {
 
         return Commands.parallel(
                 updateDesiredGoal(InternalGoal.DYNAMIC_PARAMETERS),
-                turret.runPosition(() -> cached.get().turretAngle(), () -> cached.get().turretVelocityRotsPerSec()),
                 hoodCommand.apply(cached),
                 shooter.runVelocity(() -> cached.get().shooter().shooterVelocityRotsPerSec()),
                 Commands.run(parameters::clear)
