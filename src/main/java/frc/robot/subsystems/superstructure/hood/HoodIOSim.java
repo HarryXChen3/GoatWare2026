@@ -95,6 +95,8 @@ public class HoodIOSim implements HoodIO {
                 motorDeviceTemp
         );
 
+        config();
+
         final Notifier simUpdateNotifier = new Notifier(() -> {
             final double dt = deltaTime.get();
             motorSim.update(dt);

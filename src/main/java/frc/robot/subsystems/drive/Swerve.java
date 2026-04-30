@@ -44,8 +44,8 @@ import frc.robot.subsystems.drive.SwerveIO.SwerveDriveState;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
 import frc.robot.subsystems.drive.controllers.HolonomicChoreoController;
 import frc.robot.subsystems.drive.controllers.HolonomicDriveController;
-import frc.robot.utils.commands.trigger.LoggedTrigger;
 import frc.robot.utils.commands.ext.SubsystemExt;
+import frc.robot.utils.commands.trigger.LoggedTrigger;
 import frc.robot.utils.gyro.GyroUtils;
 import frc.robot.utils.teleop.ControllerUtils;
 import frc.robot.utils.teleop.SwerveSpeed;
@@ -104,6 +104,10 @@ public class Swerve extends SubsystemExt {
             .withSteerRequestType(SwerveModule.SteerRequestType.Position)
             .withDesaturateWheelSpeeds(true)
             .withCenterOfRotation(Config.centerOfRotationMeters());
+
+    private final SwerveRequest.PointWheelsAt pointWheelsAt = new SwerveRequest.PointWheelsAt()
+            .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage)
+            .withSteerRequestType(SwerveModule.SteerRequestType.Position);
 
     private final SwerveRequest.SysIdSwerveTranslation sysIdTranslationVoltage =
             new SwerveRequest.SysIdSwerveTranslation();
@@ -836,6 +840,12 @@ public class Swerve extends SubsystemExt {
     public Command runWheelXCommand() {
         return run(this::wheelX)
                 .withName("RunWheelX");
+    }
+
+    // TODO: temp
+    public void stoppedZero() {
+        stop();
+        applyRequest(pointWheelsAt.withModuleDirection(Rotation2d.kZero));
     }
 
     public LoggedTrigger atPoseTrigger(final Supplier<Pose2d> targetPoseSupplier) {

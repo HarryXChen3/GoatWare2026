@@ -29,6 +29,10 @@ public interface SimConstants {
         double FuelExitRightYBoundMeters = -FuelExitLeftYBoundMeters;
     }
 
+    interface Turret {
+        Translation3d OriginOffset = new Translation3d(-0.127, 0, 0.386);
+    }
+
     interface Shooter {
         double WheelRadiusMeters = Units.inchesToMeters(2);
         double WheelCircumferenceMeters = 2 * Math.PI * WheelRadiusMeters;

@@ -86,6 +86,8 @@ public class HopperIOSim implements HopperIO {
                 motorDeviceTemp
         );
 
+        config();
+
         final Notifier simUpdateNotifier = new Notifier(() -> {
             final double dt = deltaTime.get();
             motorSim.update(dt);

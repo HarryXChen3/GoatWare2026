@@ -104,7 +104,7 @@ public class HolonomicDriveController {
             final Supplier<Pose2d> targetPoseSupplier,
             final PositionTolerance positionTolerance
     ) {
-        return group.t("atPose", () -> {
+        return group.t("AtPose", () -> {
             final Transform2d delta = currentPoseSupplier.get().minus(targetPoseSupplier.get());
 
             final double translationDistanceMeters = Math.abs(delta.getTranslation().getNorm());
@@ -123,7 +123,7 @@ public class HolonomicDriveController {
             final PositionTolerance positionTolerance,
             final VelocityTolerance velocityTolerance
     ) {
-        return group.t("atPoseAndStopped", () -> {
+        return group.t("AtPoseAndStopped", () -> {
             final Transform2d delta = currentPoseSupplier.get().minus(targetPoseSupplier.get());
             final ChassisSpeeds speeds = fieldRelativeSpeedsSupplier.get();
 

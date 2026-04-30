@@ -55,6 +55,8 @@ public class HoodIOReal implements HoodIO {
                 motorTorqueCurrent,
                 motorDeviceTemp
         );
+
+        config();
     }
 
     @Override

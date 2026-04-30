@@ -1,7 +1,6 @@
 package frc.robot.subsystems.superstructure.shooter;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -59,8 +58,6 @@ public class Shooter extends SubsystemExt {
         }
     }
 
-    private final HardwareConstants.ShooterConstants constants;
-
     private final ShooterIO shooterIO;
     private final ShooterIOInputsAutoLogged inputs;
 
@@ -70,7 +67,6 @@ public class Shooter extends SubsystemExt {
     private double velocitySetpointRotsPerSec;
 
     public Shooter(final Constants.RobotMode mode, final HardwareConstants.ShooterConstants constants) {
-        this.constants = constants;
         this.shooterIO = switch (mode) {
             case REAL -> new ShooterIOReal(constants);
             case SIM -> new ShooterIOSim(constants);
@@ -78,6 +74,7 @@ public class Shooter extends SubsystemExt {
         };
 
         this.inputs = new ShooterIOInputsAutoLogged();
+
         this.shooterIO.config();
     }
 
@@ -106,10 +103,6 @@ public class Shooter extends SubsystemExt {
                 LogKey + "/PeriodicIOPeriodMs",
                 Units.secondsToMilliseconds(Timer.getFPGATimestamp() - shooterPeriodicUpdateStart)
         );
-    }
-
-    public Transform2d getOffsetFromCenter() {
-        return constants.offsetFromCenter();
     }
 
     public boolean atSetpoint() {

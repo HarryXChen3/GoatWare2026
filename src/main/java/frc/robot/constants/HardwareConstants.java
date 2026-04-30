@@ -1,6 +1,7 @@
 package frc.robot.constants;
 
-import edu.wpi.first.math.geometry.*;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 
 import java.util.HashMap;
 import java.util.Objects;

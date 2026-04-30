@@ -55,6 +55,8 @@ public class IntakeRollersIOReal implements IntakeRollersIO {
                 motorTorqueCurrent,
                 motorDeviceTemp
         );
+
+        config();
     }
 
     @Override

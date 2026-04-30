@@ -61,6 +61,8 @@ public class FeederIOReal implements FeederIO {
                 motorDeviceTemp,
                 tofDetected
         );
+
+        config();
     }
 
     @Override
@@ -95,8 +97,8 @@ public class FeederIOReal implements FeederIO {
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(feederConfiguration));
 
         final CANrangeConfiguration canRangeConfiguration = new CANrangeConfiguration();
-        canRangeConfiguration.ProximityParams.ProximityThreshold = 0.4;
-        canRangeConfiguration.ProximityParams.ProximityHysteresis = 0.01;
+        canRangeConfiguration.ProximityParams.ProximityThreshold = 0.05;
+        canRangeConfiguration.ProximityParams.ProximityHysteresis = 0.02;
         canRangeConfiguration.ProximityParams.MinSignalStrengthForValidMeasurement = 2500;
         canRangeConfiguration.ToFParams.UpdateMode = UpdateModeValue.ShortRange100Hz;
         Phoenix6Utils.tryUntilOk(tof, () -> tof.getConfigurator().apply(canRangeConfiguration));

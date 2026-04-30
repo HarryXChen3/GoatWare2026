@@ -108,6 +108,8 @@ public class ShooterIOSim implements ShooterIO {
                 followerDeviceTemp
         );
 
+        config();
+
         final Notifier simUpdateNotifier = new Notifier(() -> {
             final double dt = deltaTime.get();
             motorsSim.update(dt);

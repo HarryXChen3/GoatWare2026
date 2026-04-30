@@ -74,6 +74,8 @@ public class ShooterIOReal implements ShooterIO {
                 followerTorqueCurrent,
                 followerDeviceTemp
         );
+
+        config();
     }
 
     @Override

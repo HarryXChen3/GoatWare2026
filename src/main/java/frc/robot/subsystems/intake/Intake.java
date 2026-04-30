@@ -14,7 +14,7 @@ public class Intake {
     private final IntakeRollers rollers;
 
     private boolean intaking = false;
-    public final LoggedTrigger isIntaking = group.t("isIntaking", () -> intaking);
+    public final LoggedTrigger isIntaking = group.t("IsIntaking", () -> intaking);
 
     public Intake(
             final IntakeSlide slide,
