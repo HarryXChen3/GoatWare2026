@@ -60,10 +60,8 @@ public class HoodIOSim implements HoodIO {
                 dcMotor,
                 constants.gearing(),
                 Units.inchesToMeters(8),
-//                Units.rotationsToRadians(constants.lowerLimitRots()),
-                0,
-//                Units.rotationsToRadians(constants.upperLimitRots()),
-                Units.degreesToRadians(90),
+                Units.rotationsToRadians(constants.lowerLimitRots() - 0.25),
+                Units.rotationsToRadians(constants.upperLimitRots() + 0.25),
                 false,
                 0
         );
@@ -174,5 +172,10 @@ public class HoodIOSim implements HoodIO {
     @Override
     public void toHoodVoltage(final double hoodVolts) {
         motor.setControl(voltageOut.withOutput(hoodVolts));
+    }
+
+    @Override
+    public void setHoodPosition(final double hoodPositionRots) {
+        Phoenix6Utils.tryUntilOk(motor, () -> motor.setPosition(hoodPositionRots));
     }
 }

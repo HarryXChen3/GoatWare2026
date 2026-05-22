@@ -19,4 +19,6 @@ public interface HoodIO {
     default void toHoodPosition(final double hoodPositionRots) {}
 
     default void toHoodVoltage(final double hoodVolts) {}
+
+    default void setHoodPosition(final double hoodPositionRots) {}
 }

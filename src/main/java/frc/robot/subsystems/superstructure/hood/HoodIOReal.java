@@ -120,4 +120,9 @@ public class HoodIOReal implements HoodIO {
     public void toHoodVoltage(final double hoodVolts) {
         motor.setControl(voltageOut.withOutput(hoodVolts));
     }
+
+    @Override
+    public void setHoodPosition(final double hoodPositionRots) {
+        Phoenix6Utils.tryUntilOk(motor, () -> motor.setPosition(hoodPositionRots));
+    }
 }
