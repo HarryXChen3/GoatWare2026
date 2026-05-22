@@ -2,6 +2,7 @@ package frc.robot.subsystems.superstructure.turret;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -21,6 +22,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.*;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.constants.HardwareConstants;
@@ -63,6 +65,8 @@ public class TurretIOSim implements TurretIO {
 
     private final StatusSignal<Angle> secondaryCANcoderPosition;
     private final StatusSignal<Angle> secondaryCANcoderAbsolutePosition;
+
+    private boolean positionSeeded = false;
 
     public TurretIOSim(final HardwareConstants.TurretConstants constants) {
         this.deltaTime = new DeltaTime(true);
@@ -158,6 +162,11 @@ public class TurretIOSim implements TurretIO {
 
         inputs.secondaryCANcoderPositionRots = secondaryCANcoderPosition.getValueAsDouble();
         inputs.secondaryCANcoderAbsolutePositionRots = secondaryCANcoderAbsolutePosition.getValueAsDouble();
+
+        inputs.motorConnected = motor.isConnected();
+        inputs.primaryCANcoderConnected = primaryCANcoder.isConnected();
+        inputs.secondaryCANcoderConnected = secondaryCANcoder.isConnected();
+        inputs.positionSeeded = positionSeeded;
     }
 
     @Override
@@ -253,12 +262,20 @@ public class TurretIOSim implements TurretIO {
 
     @Override
     public void seedTurretPosition(final Rotation2d turretPosition) {
+        if (positionSeeded) {
+            DriverStation.reportWarning(
+                    "Attempted to seed turret position more than once! This is a bug.",
+                    true
+            );
+            return;
+        }
+
         final double turretPositionRots = turretPosition.getRotations();
-        Phoenix6Utils.tryUntilOk(motor, 10, () -> motor.setPosition(turretPositionRots));
-//        Phoenix6Utils.tryUntilOk(
-//                primaryCANcoder,
-//                () -> primaryCANcoder.setPosition(turretPositionRots / constants.primaryCANcoderGearing())
-//        );
+        final StatusCode statusCode =
+                Phoenix6Utils.tryUntilOk(motor, 10, () -> motor.setPosition(turretPositionRots));
+        if (statusCode.isOK()) {
+            positionSeeded = true;
+        }
     }
 
     @Override

@@ -17,6 +17,11 @@ public interface TurretIO {
 
         public double secondaryCANcoderPositionRots = 0;
         public double secondaryCANcoderAbsolutePositionRots = 0;
+
+        public boolean motorConnected = false;
+        public boolean primaryCANcoderConnected = false;
+        public boolean secondaryCANcoderConnected = false;
+        public boolean positionSeeded = false;
     }
 
     default void updateInputs(final TurretIOInputs inputs) {}

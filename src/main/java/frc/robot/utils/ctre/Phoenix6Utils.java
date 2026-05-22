@@ -18,7 +18,7 @@ import frc.robot.constants.SimConstants;
 import java.util.function.Supplier;
 
 public class Phoenix6Utils {
-    public static final int MaxAttempts = 2;
+    public static final int MaxRetryAttempts = 2;
 
     /**
      * Performs latency compensation on a refreshed {@link StatusSignal}
@@ -53,71 +53,12 @@ public class Phoenix6Utils {
     }
 
     /**
-     * Exception thrown when a {@link StatusCode} assertion fails.
-     *
-     * @see Phoenix6Utils#assertIsOK(StatusCode)
+     * Configures the soft limits on a {@link TalonFX}
+     * @param talonFX the {@link TalonFX} to configure
+     * @param reverseSoftLimitRots the reverse soft limit, in Rots
+     * @param forwardSoftLimitRots the forward soft limit, in Rots
+     * @return the {@link StatusCode} after applying
      */
-    public static class StatusCodeAssertionException extends RuntimeException {
-        public StatusCodeAssertionException(final StatusCode expected, final StatusCode got) {
-            super(String.format("Expected StatusCode %s; got %s", expected.getName(), got.getName()));
-        }
-
-        public StatusCodeAssertionException(final StatusCode got) {
-            this(StatusCode.OK, got);
-        }
-    }
-
-    /**
-     * Assert that a {@link StatusCode} must be {@link StatusCode#isOK()}.
-     *
-     * @param statusCode the {@link StatusCode}
-     * @throws StatusCodeAssertionException if the {@link StatusCode} is not {@link StatusCode#isOK()}
-     */
-    public static void assertIsOK(final StatusCode statusCode) {
-        if (!statusCode.isOK()) {
-            throw new StatusCodeAssertionException(statusCode);
-        }
-    }
-
-    public static StatusCode tryUntilOk(
-            final ParentDevice device,
-            final int maxAttempts,
-            final Supplier<StatusCode> apply
-    ) {
-        StatusCode status = StatusCode.OK;
-        for (int i = 0; i < maxAttempts; i++) {
-            status = apply.get();
-            if (status.isOK()) {
-                return status;
-            } else if (i < maxAttempts - 1) {
-                DriverStation.reportWarning(String.format(
-                        "Attempt %d on device %d: %s",
-                        i + 2, device.getDeviceID(), status.getName()
-                ), true);
-            }
-        }
-
-        reportIfNotOk(device, status);
-        return status;
-    }
-
-    public static StatusCode tryUntilOk(final ParentDevice device, final Supplier<StatusCode> apply) {
-        return tryUntilOk(device, MaxAttempts, apply);
-    }
-
-    public static void reportIfNotOk(final ParentDevice device, final StatusCode statusCode) {
-        if (!statusCode.isOK()) {
-            DriverStation.reportError(
-                    String.format(
-                            "Failed on device %d: %s",
-                            device.getDeviceID(),
-                            statusCode.getName()
-                    ),
-                    true
-            );
-        }
-    }
-
     @SuppressWarnings("UnusedReturnValue")
     public static StatusCode configureTalonFXSoftLimits(
             final TalonFX talonFX,
@@ -142,8 +83,92 @@ public class Phoenix6Utils {
         configuration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = forwardSoftLimitRots;
         configuration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
 
-        final StatusCode statusCode = configurator.apply(configuration);
+        final StatusCode statusCode = tryUntilOk(talonFX, () -> configurator.apply(configuration));
         Phoenix6Utils.reportIfNotOk(talonFX, statusCode);
         return statusCode;
+    }
+
+    /**
+     * Attempts to invoke the callback until the returned {@link StatusCode#isOK()}
+     * @param device the {@link ParentDevice} associated with the callback
+     * @param maxAttempts the maximum number of attempts
+     * @param apply the callback
+     * @return the last {@link StatusCode}
+     */
+    public static StatusCode tryUntilOk(
+            final ParentDevice device,
+            final int maxAttempts,
+            final Supplier<StatusCode> apply
+    ) {
+        StatusCode status = StatusCode.OK;
+        for (int i = 0; i < maxAttempts; i++) {
+            status = apply.get();
+            if (status.isOK()) {
+                return status;
+            } else if (i < maxAttempts - 1) {
+                DriverStation.reportWarning(String.format(
+                        "Attempt %d on device %d: %s",
+                        i + 2, device.getDeviceID(), status.getName()
+                ), true);
+            }
+        }
+
+        reportIfNotOk(device, status);
+        return status;
+    }
+
+    /**
+     * Attempts to invoke the callback until the returned {@link StatusCode#isOK()}
+     * @param device the {@link ParentDevice} associated with the callback
+     * @param apply the callback
+     * @return the last {@link StatusCode}
+     */
+    public static StatusCode tryUntilOk(final ParentDevice device, final Supplier<StatusCode> apply) {
+        return tryUntilOk(device, MaxRetryAttempts, apply);
+    }
+
+    /**
+     * Reports a status code failure if {@link StatusCode#isOK()} is false.
+     * @param device the {@link ParentDevice} that generated the {@link StatusCode}
+     * @param statusCode the {@link StatusCode}
+     */
+    public static void reportIfNotOk(final ParentDevice device, final StatusCode statusCode) {
+        if (!statusCode.isOK()) {
+            DriverStation.reportError(
+                    String.format(
+                            "Failed on device %d: %s",
+                            device.getDeviceID(),
+                            statusCode.getName()
+                    ),
+                    true
+            );
+        }
+    }
+
+    /**
+     * Assert that a {@link StatusCode} must be {@link StatusCode#isOK()}.
+     *
+     * @param statusCode the {@link StatusCode}
+     * @throws StatusCodeAssertionException if the {@link StatusCode} is not {@link StatusCode#isOK()}
+     */
+    public static void assertIsOK(final StatusCode statusCode) {
+        if (!statusCode.isOK()) {
+            throw new StatusCodeAssertionException(statusCode);
+        }
+    }
+
+    /**
+     * Exception thrown when a {@link StatusCode} assertion fails.
+     *
+     * @see Phoenix6Utils#assertIsOK(StatusCode)
+     */
+    public static class StatusCodeAssertionException extends RuntimeException {
+        public StatusCodeAssertionException(final StatusCode expected, final StatusCode got) {
+            super(String.format("Expected StatusCode %s; got %s", expected.getName(), got.getName()));
+        }
+
+        public StatusCodeAssertionException(final StatusCode got) {
+            this(StatusCode.OK, got);
+        }
     }
 }

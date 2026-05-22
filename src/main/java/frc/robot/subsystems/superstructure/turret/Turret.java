@@ -98,6 +98,14 @@ public class Turret extends SubsystemExt {
         };
     }
 
+    private boolean shouldSeedPosition() {
+        return !inputs.positionSeeded
+                && MathUtil.isNear(0, inputs.motorVelocityRotsPerSec, 1e-3)
+                && inputs.motorConnected
+                && inputs.primaryCANcoderConnected
+                && inputs.secondaryCANcoderConnected;
+    }
+
     @Override
     public void periodic() {
         final double turretPeriodicUpdateStart = Timer.getFPGATimestamp();
@@ -105,7 +113,7 @@ public class Turret extends SubsystemExt {
         turretIO.updateInputs(inputs);
         Logger.processInputs(LogKey, inputs);
 
-        if (!positionSeeded && MathUtil.isNear(0, inputs.motorVelocityRotsPerSec, 1e-3)) {
+        if (shouldSeedPosition()) {
             final Rotation2d position = CRT.solve(
                     constants.drivenTurretGearTeeth(),
                     inputs.primaryCANcoderAbsolutePositionRots,
@@ -115,7 +123,6 @@ public class Turret extends SubsystemExt {
                     constants.forwardLimitRots()
             );
             turretIO.seedTurretPosition(position);
-            positionSeeded = true;
         }
 
         final InternalGoal currentGoal;

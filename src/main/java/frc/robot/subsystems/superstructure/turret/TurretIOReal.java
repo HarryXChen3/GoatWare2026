@@ -2,6 +2,7 @@ package frc.robot.subsystems.superstructure.turret;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -15,6 +16,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.*;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.*;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.constants.HardwareConstants;
 import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
@@ -37,7 +39,12 @@ public class TurretIOReal implements TurretIO {
     private final StatusSignal<Temperature> motorDeviceTemp;
 
     private final StatusSignal<Angle> primaryCANcoderPosition;
+    private final StatusSignal<Angle> primaryCANcoderAbsolutePosition;
+
     private final StatusSignal<Angle> secondaryCANcoderPosition;
+    private final StatusSignal<Angle> secondaryCANcoderAbsolutePosition;
+
+    private boolean positionSeeded = false;
 
     public TurretIOReal(final HardwareConstants.TurretConstants constants) {
         this.constants = constants;
@@ -59,7 +66,10 @@ public class TurretIOReal implements TurretIO {
         this.motorDeviceTemp = motor.getDeviceTemp(false);
 
         this.primaryCANcoderPosition = primaryCANcoder.getPosition(false);
+        this.primaryCANcoderAbsolutePosition = primaryCANcoder.getAbsolutePosition(false);
+
         this.secondaryCANcoderPosition = secondaryCANcoder.getPosition(false);
+        this.secondaryCANcoderAbsolutePosition = secondaryCANcoder.getAbsolutePosition(false);
 
         RefreshAll.add(
                 bus,
@@ -84,7 +94,15 @@ public class TurretIOReal implements TurretIO {
         inputs.motorTempCelsius = motorDeviceTemp.getValueAsDouble();
 
         inputs.primaryCANcoderPositionRots = primaryCANcoderPosition.getValueAsDouble();
+        inputs.primaryCANcoderAbsolutePositionRots = primaryCANcoderAbsolutePosition.getValueAsDouble();
+
         inputs.secondaryCANcoderPositionRots = secondaryCANcoderPosition.getValueAsDouble();
+        inputs.secondaryCANcoderAbsolutePositionRots = secondaryCANcoderAbsolutePosition.getValueAsDouble();
+
+        inputs.motorConnected = motor.isConnected();
+        inputs.primaryCANcoderConnected = primaryCANcoder.isConnected();
+        inputs.secondaryCANcoderConnected = secondaryCANcoder.isConnected();
+        inputs.positionSeeded = positionSeeded;
     }
 
     @Override
@@ -158,8 +176,20 @@ public class TurretIOReal implements TurretIO {
 
     @Override
     public void seedTurretPosition(final Rotation2d turretPosition) {
+        if (positionSeeded) {
+            DriverStation.reportWarning(
+                    "Attempted to seed turret position more than once! This is a bug.",
+                    true
+            );
+            return;
+        }
+
         final double turretPositionRots = turretPosition.getRotations();
-        Phoenix6Utils.tryUntilOk(motor, 10, () -> motor.setPosition(turretPositionRots));
+        final StatusCode statusCode =
+                Phoenix6Utils.tryUntilOk(motor, 10, () -> motor.setPosition(turretPositionRots));
+        if (statusCode.isOK()) {
+            positionSeeded = true;
+        }
     }
 
     @Override
