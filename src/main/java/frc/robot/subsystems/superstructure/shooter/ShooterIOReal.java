@@ -41,9 +41,8 @@ public class ShooterIOReal implements ShooterIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        final CANBus p6Bus = bus.toPhoenix6CANBus();
-        this.masterMotor = new TalonFX(constants.masterId(), p6Bus);
-        this.followerMotor = new TalonFX(constants.followerId(), p6Bus);
+        this.masterMotor = new TalonFX(constants.masterId(), bus.p6Bus);
+        this.followerMotor = new TalonFX(constants.followerId(), bus.p6Bus);
 
         this.velocityTorqueCurrentFOC = new VelocityTorqueCurrentFOC(0);
         this.voltageOut = new VoltageOut(0);

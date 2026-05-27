@@ -56,8 +56,7 @@ public class ClimbIOSim implements ClimbIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        final CANBus p6Bus = bus.toPhoenix6CANBus();
-        this.motor = new TalonFX(constants.motorId(), p6Bus);
+        this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
 
         final DCMotor dcMotor = DCMotor.getKrakenX60Foc(1);
         final ElevatorSim elevatorSim = new ElevatorSim(

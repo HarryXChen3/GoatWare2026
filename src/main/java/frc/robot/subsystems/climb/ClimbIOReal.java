@@ -38,8 +38,7 @@ public class ClimbIOReal implements ClimbIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        final CANBus p6Bus = bus.toPhoenix6CANBus();
-        this.motor = new TalonFX(constants.motorId(), p6Bus);
+        this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
 
         this.positionTorqueCurrentFOC = new PositionTorqueCurrentFOC(0);
         this.torqueCurrentFOC = new TorqueCurrentFOC(0);

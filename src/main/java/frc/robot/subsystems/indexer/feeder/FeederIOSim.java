@@ -58,8 +58,7 @@ public class FeederIOSim implements FeederIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        final CANBus p6Bus = bus.toPhoenix6CANBus();
-        this.motor = new TalonFX(constants.motorId(), p6Bus);
+        this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
 
         final DCMotor dcMotor = DCMotor.getKrakenX60Foc(1);
         final DCMotorSim dcMotorSim = new DCMotorSim(
@@ -75,7 +74,7 @@ public class FeederIOSim implements FeederIO {
                 dcMotorSim::getAngularVelocityRadPerSec
         );
 
-        this.tof = new CANrange(constants.tofId(), p6Bus);
+        this.tof = new CANrange(constants.tofId(), bus.p6Bus);
         this.tofConfiguration = new CANrangeConfiguration();
         this.tofSimState = tof.getSimState();
 

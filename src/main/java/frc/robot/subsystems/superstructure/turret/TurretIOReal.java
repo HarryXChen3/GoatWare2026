@@ -50,10 +50,9 @@ public class TurretIOReal implements TurretIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        final CANBus p6Bus = bus.toPhoenix6CANBus();
-        this.motor = new TalonFX(constants.motorId(), p6Bus);
-        this.primaryCANcoder = new CANcoder(constants.primaryCANcoderId(), p6Bus);
-        this.secondaryCANcoder = new CANcoder(constants.secondaryCANcoderId(), p6Bus);
+        this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
+        this.primaryCANcoder = new CANcoder(constants.primaryCANcoderId(), bus.p6Bus);
+        this.secondaryCANcoder = new CANcoder(constants.secondaryCANcoderId(), bus.p6Bus);
 
         this.positionVoltage = new PositionVoltage(0);
         this.motionMagicExpoVoltage = new MotionMagicExpoVoltage(0);

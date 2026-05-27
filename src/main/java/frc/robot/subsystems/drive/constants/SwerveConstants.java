@@ -152,7 +152,7 @@ public class SwerveConstants {
         private static final double TurnKsFrictionVolts = 0.2;
 
         public static final SwerveDrivetrainConstants DrivetrainConstants = new SwerveDrivetrainConstants()
-                .withCANBusName(Config.canBus.name)
+                .withCANBusName(Config.canBus.id)
                 .withPigeon2Id(Gyro.gyroId)
                 .withPigeon2Configs(Pigeon2Configuration);
 

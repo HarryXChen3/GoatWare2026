@@ -62,7 +62,7 @@ public class IntakeSlideIOSim implements IntakeSlideIO {
         this.deltaTime = new DeltaTime(true);
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        final CANBus p6Bus = bus.toPhoenix6CANBus();
+        final CANBus p6Bus = bus.p6Bus;
 
         this.avg_mmExpoTorqueCurrentFOC = new MotionMagicExpoTorqueCurrentFOC(0);
         this.avg_positionTorqueCurrentFOC = new PositionTorqueCurrentFOC(0);

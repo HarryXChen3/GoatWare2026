@@ -51,8 +51,7 @@ public class HoodIOSim implements HoodIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        final CANBus p6Bus = bus.toPhoenix6CANBus();
-        this.motor = new TalonFX(constants.motorId(), p6Bus);
+        this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
 
         final DCMotor dcMotor = DCMotor.getKrakenX44Foc(1);
         final SingleJointedArmSim armSim = new SingleJointedArmSim(

@@ -13,25 +13,26 @@ public class HardwareConstants {
         RIO("rio"),
         CANIVORE("CANivore");
 
-        private static final HashMap<String, CANBus> BusNameToCANBus = new HashMap<>();
+        private static final HashMap<String, CANBus> P6BusNameToCANBus = new HashMap<>();
         static {
             for (final CANBus bus : CANBus.values()) {
-                BusNameToCANBus.put(bus.name, bus);
+                P6BusNameToCANBus.put(bus.p6Bus.getName(), bus);
             }
         }
 
-        public final String name;
-        CANBus(final String name) {
-            this.name = name;
+        public final String id;
+        public final com.ctre.phoenix6.CANBus p6Bus;
+        
+        CANBus(final String id) {
+            this.id = id;
+            this.p6Bus = new com.ctre.phoenix6.CANBus(id);
         }
 
         public static CANBus fromPhoenix6CANBus(final com.ctre.phoenix6.CANBus bus) {
             return Objects.requireNonNull(
-                    BusNameToCANBus.get(bus.getName()), () -> String.format("Could not get CANBus: %s", bus.getName()));
-        }
-
-        public com.ctre.phoenix6.CANBus toPhoenix6CANBus() {
-            return new com.ctre.phoenix6.CANBus(name);
+                    P6BusNameToCANBus.get(bus.getName()),
+                    () -> String.format("Could not get CANBus: %s", bus.getName())
+            );
         }
     }
 
