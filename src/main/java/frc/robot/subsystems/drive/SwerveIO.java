@@ -103,7 +103,7 @@ public interface SwerveIO {
             this.turnTemperature = turnMotor.getDeviceTemp(false);
 
             RefreshAll.add(CANBus.fromPhoenix6CANBus(driveMotor.getNetwork()),
-                    drivePosition, driveVelocity, turnTorqueCurrent, driveTemperature);
+                    drivePosition, driveVelocity, driveTorqueCurrent, driveTemperature);
             RefreshAll.add(CANBus.fromPhoenix6CANBus(turnMotor.getNetwork()),
                     turnPosition, turnVelocity, turnTorqueCurrent, turnTemperature);
         }
