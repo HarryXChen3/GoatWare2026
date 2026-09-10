@@ -41,30 +41,26 @@ public class TurretIOSim implements TurretIO {
     private final HardwareConstants.TurretConstants constants;
 
     private final TalonFX motor;
-    private final CANcoder primaryCANcoder;
-    private final CANcoder secondaryCANcoder;
+    private final CANcoder CANcoder;
 
     private final DCMotorSim dcMotorSim;
     private final Rotation2d initialRandPosition;
 
     private final TalonFXSim motorSim;
-    private final SimTurretCANcoders simCANcoders;
+    private final SimTurretCANcoder simCANcoder;
 
     private final PositionVoltage positionVoltage;
     private final MotionMagicExpoVoltage motionMagicExpoVoltage;
     private final VoltageOut voltageOut;
 
     private final StatusSignal<Angle> motorPosition;
+    private final StatusSignal<Angle> motorRotorPosition;
     private final StatusSignal<AngularVelocity> motorVelocity;
     private final StatusSignal<Voltage> motorVoltage;
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    private final StatusSignal<Angle> primaryCANcoderPosition;
-    private final StatusSignal<Angle> primaryCANcoderAbsolutePosition;
-
-    private final StatusSignal<Angle> secondaryCANcoderPosition;
-    private final StatusSignal<Angle> secondaryCANcoderAbsolutePosition;
+    private final StatusSignal<Angle> CANcoderPosition;
 
     private boolean positionSeeded = false;
 
@@ -74,8 +70,7 @@ public class TurretIOSim implements TurretIO {
 
         final HardwareConstants.CANBus bus = constants.CANBus();
         this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
-        this.primaryCANcoder = new CANcoder(constants.primaryCANcoderId(), bus.p6Bus);
-        this.secondaryCANcoder = new CANcoder(constants.secondaryCANcoderId(), bus.p6Bus);
+        this.CANcoder = new CANcoder(constants.CANcoderId(), bus.p6Bus);
 
         this.initialRandPosition = Rotation2d.fromRotations(
                 Math.random()
@@ -83,7 +78,7 @@ public class TurretIOSim implements TurretIO {
                         + constants.reverseLimitRots()
         );
 
-        final double motorToTurretGearing = constants.motorToGearboxGearing() * constants.gearboxToTurretGearing();
+        final double motorToTurretGearing = constants.motorToTurretGearing();
         final DCMotor dcMotor = DCMotor.getKrakenX60Foc(1);
         this.dcMotorSim = new DCMotorSim(
                 LinearSystemId.createDCMotorSystem(
@@ -103,35 +98,30 @@ public class TurretIOSim implements TurretIO {
                 dcMotorSim::getAngularPositionRad,
                 dcMotorSim::getAngularVelocityRadPerSec
         );
-        this.simCANcoders = new SimTurretCANcoders(constants, primaryCANcoder, secondaryCANcoder);
+        this.simCANcoder = new SimTurretCANcoder(constants, CANcoder);
 
         this.positionVoltage = new PositionVoltage(0);
         this.motionMagicExpoVoltage = new MotionMagicExpoVoltage(0);
         this.voltageOut = new VoltageOut(0);
 
         this.motorPosition = motor.getPosition(false);
+        this.motorRotorPosition = motor.getRotorPosition(false);
         this.motorVelocity = motor.getVelocity(false);
         this.motorVoltage = motor.getMotorVoltage(false);
         this.motorTorqueCurrent = motor.getTorqueCurrent(false);
         this.motorDeviceTemp = motor.getDeviceTemp(false);
 
-        this.primaryCANcoderPosition = primaryCANcoder.getPosition(false);
-        this.primaryCANcoderAbsolutePosition = primaryCANcoder.getAbsolutePosition(false);
-
-        this.secondaryCANcoderPosition = secondaryCANcoder.getPosition(false);
-        this.secondaryCANcoderAbsolutePosition = secondaryCANcoder.getAbsolutePosition(false);
+        this.CANcoderPosition = CANcoder.getPosition(false);
 
         RefreshAll.add(
                 bus,
                 motorPosition,
+                motorRotorPosition,
                 motorVelocity,
                 motorVoltage,
                 motorTorqueCurrent,
                 motorDeviceTemp,
-                primaryCANcoderPosition,
-                primaryCANcoderAbsolutePosition,
-                secondaryCANcoderPosition,
-                secondaryCANcoderAbsolutePosition
+                CANcoderPosition
         );
 
         config();
@@ -151,20 +141,16 @@ public class TurretIOSim implements TurretIO {
     @Override
     public void updateInputs(final TurretIOInputs inputs) {
         inputs.motorPositionRots = motorPosition.getValueAsDouble();
+        inputs.motorRotorPositionRots = motorRotorPosition.getValueAsDouble();
         inputs.motorVelocityRotsPerSec = motorVelocity.getValueAsDouble();
         inputs.motorVoltage = motorVoltage.getValueAsDouble();
         inputs.motorTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
         inputs.motorTempCelsius = motorDeviceTemp.getValueAsDouble();
 
-        inputs.primaryCANcoderPositionRots = primaryCANcoderPosition.getValueAsDouble();
-        inputs.primaryCANcoderAbsolutePositionRots = primaryCANcoderAbsolutePosition.getValueAsDouble();
-
-        inputs.secondaryCANcoderPositionRots = secondaryCANcoderPosition.getValueAsDouble();
-        inputs.secondaryCANcoderAbsolutePositionRots = secondaryCANcoderAbsolutePosition.getValueAsDouble();
+        inputs.CANcoderPositionRots = CANcoderPosition.getValueAsDouble();
 
         inputs.motorConnected = motor.isConnected();
-        inputs.primaryCANcoderConnected = primaryCANcoder.isConnected();
-        inputs.secondaryCANcoderConnected = secondaryCANcoder.isConnected();
+        inputs.CANcoderConnected = CANcoder.isConnected();
         inputs.positionSeeded = positionSeeded;
     }
 
@@ -193,8 +179,7 @@ public class TurretIOSim implements TurretIO {
         motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
         motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        motorConfiguration.Feedback.SensorToMechanismRatio = constants.motorToGearboxGearing()
-                * constants.gearboxToTurretGearing();
+        motorConfiguration.Feedback.SensorToMechanismRatio = constants.motorToTurretGearing();
         motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.forwardLimitRots();
@@ -203,32 +188,23 @@ public class TurretIOSim implements TurretIO {
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 
-        final CANcoderConfiguration primaryCANcoderConfiguration = new CANcoderConfiguration();
-        primaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
-        primaryCANcoderConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
-        primaryCANcoderConfiguration.MagnetSensor.MagnetOffset = 0;
+        final CANcoderConfiguration CANcoderConfiguration = new CANcoderConfiguration();
+        CANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+        CANcoderConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
+        CANcoderConfiguration.MagnetSensor.MagnetOffset = 0;
         Phoenix6Utils.tryUntilOk(
-                primaryCANcoder,
-                () -> primaryCANcoder.getConfigurator().apply(primaryCANcoderConfiguration)
-        );
-
-        final CANcoderConfiguration secondaryCANcoderConfiguration = new CANcoderConfiguration();
-        secondaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-        secondaryCANcoderConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
-        secondaryCANcoderConfiguration.MagnetSensor.MagnetOffset = 0;
-        Phoenix6Utils.tryUntilOk(
-                secondaryCANcoder,
-                () -> secondaryCANcoder.getConfigurator().apply(secondaryCANcoderConfiguration)
+                CANcoder,
+                () -> CANcoder.getConfigurator().apply(CANcoderConfiguration)
         );
 
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
                 motorPosition,
+                motorRotorPosition,
                 motorVelocity,
                 motorVoltage,
                 motorTorqueCurrent,
-                primaryCANcoderPosition,
-                secondaryCANcoderPosition
+                CANcoderPosition
         );
 
         BaseStatusSignal.setUpdateFrequencyForAll(
@@ -239,24 +215,19 @@ public class TurretIOSim implements TurretIO {
         ParentDevice.optimizeBusUtilizationForAll(
                 4,
                 motor,
-                primaryCANcoder,
-                secondaryCANcoder
+                CANcoder
         );
 
         final TalonFXSimState motorSimState = motor.getSimState();
         motorSimState.Orientation = ChassisReference.Clockwise_Positive;
         motorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
 
-        final CANcoderSimState primaryCANcoderSimState = primaryCANcoder.getSimState();
-        primaryCANcoderSimState.Orientation = ChassisReference.Clockwise_Positive;
-        primaryCANcoderSimState.SensorOffset = 0;
+        final CANcoderSimState CANcoderSimState = CANcoder.getSimState();
+        CANcoderSimState.Orientation = ChassisReference.CounterClockwise_Positive;
+        CANcoderSimState.SensorOffset = 0;
 
-        final CANcoderSimState secondaryCANcoderSimState = secondaryCANcoder.getSimState();
-        secondaryCANcoderSimState.Orientation = ChassisReference.CounterClockwise_Positive;
-        secondaryCANcoderSimState.SensorOffset = 0;
-
-        simCANcoders.setRawPosition(initialRandPosition.getRotations());
-        motorSim.attachFeedbackSensor(simCANcoders);
+        simCANcoder.setRawPosition(initialRandPosition.getRotations());
+        motorSim.attachFeedbackSensor(simCANcoder);
     }
 
     @Override
@@ -298,70 +269,49 @@ public class TurretIOSim implements TurretIO {
         motor.setControl(voltageOut.withOutput(turretVolts));
     }
 
-    private static class SimTurretCANcoders implements SimFeedbackSensor {
+    private static class SimTurretCANcoder implements SimFeedbackSensor {
         private final HardwareConstants.TurretConstants constants;
 
-        private final CANcoder primaryCANcoder;
-        private final CANcoder secondaryCANcoder;
+        private final CANcoder CANcoder;
 
-        private final CANcoderSimState primarySimState;
-        private final CANcoderSimState secondarySimState;
+        private final CANcoderSimState simState;
 
-        public SimTurretCANcoders(
+        public SimTurretCANcoder(
                 final HardwareConstants.TurretConstants constants,
-                final CANcoder primaryCANcoder,
-                final CANcoder secondaryCANcoder
+                final CANcoder CANcoder
         ) {
             this.constants = constants;
-            this.primaryCANcoder = primaryCANcoder;
-            this.secondaryCANcoder = secondaryCANcoder;
+            this.CANcoder = CANcoder;
 
-            this.primarySimState = primaryCANcoder.getSimState();
-            this.secondarySimState = secondaryCANcoder.getSimState();
+            this.simState = CANcoder.getSimState();
         }
 
         @Override
         public void setSupplyVoltage(final double volts) {
-            Phoenix6Utils.reportIfNotOk(primaryCANcoder, primarySimState.setSupplyVoltage(volts));
-            Phoenix6Utils.reportIfNotOk(secondaryCANcoder, secondarySimState.setSupplyVoltage(volts));
+            Phoenix6Utils.reportIfNotOk(CANcoder, simState.setSupplyVoltage(volts));
         }
 
         @Override
         public void setRawPosition(final double rotations) {
             Phoenix6Utils.reportIfNotOk(
-                    primaryCANcoder,
-                    primarySimState.setRawPosition(rotations / constants.primaryCANcoderGearing())
-            );
-
-            Phoenix6Utils.reportIfNotOk(
-                    secondaryCANcoder,
-                    secondarySimState.setRawPosition(rotations / constants.secondaryCANcoderGearing())
+                    CANcoder,
+                    simState.setRawPosition(rotations * constants.CANcoderGearing())
             );
         }
 
         @Override
         public void addPosition(final double deltaRotations) {
             Phoenix6Utils.reportIfNotOk(
-                    primaryCANcoder,
-                    primarySimState.addPosition(deltaRotations / constants.primaryCANcoderGearing())
-            );
-
-            Phoenix6Utils.reportIfNotOk(
-                    secondaryCANcoder,
-                    secondarySimState.addPosition(deltaRotations / constants.secondaryCANcoderGearing())
+                    CANcoder,
+                    simState.addPosition(deltaRotations * constants.CANcoderGearing())
             );
         }
 
         @Override
         public void setVelocity(final double rotationsPerSec) {
             Phoenix6Utils.reportIfNotOk(
-                    primaryCANcoder,
-                    primarySimState.setVelocity(rotationsPerSec / constants.primaryCANcoderGearing())
-            );
-
-            Phoenix6Utils.reportIfNotOk(
-                    secondaryCANcoder,
-                    secondarySimState.setVelocity(rotationsPerSec / constants.secondaryCANcoderGearing())
+                    CANcoder,
+                    simState.setVelocity(rotationsPerSec * constants.CANcoderGearing())
             );
         }
     }

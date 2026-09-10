@@ -7,20 +7,16 @@ public interface TurretIO {
     @AutoLog
     class TurretIOInputs {
         public double motorPositionRots = 0;
+        public double motorRotorPositionRots = 0;
         public double motorVelocityRotsPerSec = 0;
         public double motorVoltage = 0;
         public double motorTorqueCurrentAmps = 0;
         public double motorTempCelsius = 0;
 
-        public double primaryCANcoderPositionRots = 0;
-        public double primaryCANcoderAbsolutePositionRots = 0;
-
-        public double secondaryCANcoderPositionRots = 0;
-        public double secondaryCANcoderAbsolutePositionRots = 0;
+        public double CANcoderPositionRots = 0;
 
         public boolean motorConnected = false;
-        public boolean primaryCANcoderConnected = false;
-        public boolean secondaryCANcoderConnected = false;
+        public boolean CANcoderConnected = false;
         public boolean positionSeeded = false;
     }
 

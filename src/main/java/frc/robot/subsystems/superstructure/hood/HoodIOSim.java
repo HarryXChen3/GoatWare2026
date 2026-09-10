@@ -4,17 +4,17 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXSConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.ParentDevice;
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import com.ctre.phoenix6.sim.ChassisReference;
-import com.ctre.phoenix6.sim.TalonFXSimState;
+import com.ctre.phoenix6.sim.TalonFXSSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
@@ -26,7 +26,7 @@ import frc.robot.utils.closeables.ToClose;
 import frc.robot.utils.control.DeltaTime;
 import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
-import frc.robot.utils.sim.motors.TalonFXSim;
+import frc.robot.utils.sim.motors.TalonFXSSim;
 
 public class HoodIOSim implements HoodIO {
     private static final double SIM_UPDATE_PERIOD_SEC = 0.005;
@@ -34,8 +34,8 @@ public class HoodIOSim implements HoodIO {
     private final DeltaTime deltaTime;
     private final HardwareConstants.HoodConstants constants;
 
-    private final TalonFX motor;
-    private final TalonFXSim motorSim;
+    private final TalonFXS motor;
+    private final TalonFXSSim motorSim;
 
     private final PositionVoltage positionVoltage;
     private final VoltageOut voltageOut;
@@ -51,9 +51,9 @@ public class HoodIOSim implements HoodIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
+        this.motor = new TalonFXS(constants.motorId(), bus.p6Bus);
 
-        final DCMotor dcMotor = DCMotor.getKrakenX44Foc(1);
+        final DCMotor dcMotor = DCMotor.getMinion(1);
         final SingleJointedArmSim armSim = new SingleJointedArmSim(
                 LinearSystemId.createSingleJointedArmSystem(dcMotor,0.04, constants.gearing()),
                 dcMotor,
@@ -65,7 +65,7 @@ public class HoodIOSim implements HoodIO {
                 0
         );
 
-        this.motorSim = new TalonFXSim(
+        this.motorSim = new TalonFXSSim(
                 motor,
                 constants.gearing(),
                 armSim::update,
@@ -117,7 +117,7 @@ public class HoodIOSim implements HoodIO {
 
     @Override
     public void config() {
-        final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
+        final TalonFXSConfiguration motorConfiguration = new TalonFXSConfiguration();
         motorConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
@@ -126,12 +126,9 @@ public class HoodIOSim implements HoodIO {
                 .withKA(0)
                 .withKP(560)
                 .withKD(6);
-        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
-        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
         motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
-        motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
+        motorConfiguration.ExternalFeedback.SensorToMechanismRatio = constants.gearing();
         motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 //        motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.upperLimitRots();
@@ -158,9 +155,8 @@ public class HoodIOSim implements HoodIO {
                 motor
         );
 
-        final TalonFXSimState motorSimState = motor.getSimState();
-        motorSimState.Orientation = ChassisReference.CounterClockwise_Positive;
-        motorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX44);
+        final TalonFXSSimState motorSimState = motor.getSimState();
+        motorSimState.MotorOrientation = ChassisReference.CounterClockwise_Positive;
     }
 
     @Override

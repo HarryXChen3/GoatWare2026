@@ -1,9 +1,6 @@
 package frc.robot.constants;
 
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.util.Units;
 
 public interface SimConstants {
@@ -25,7 +22,7 @@ public interface SimConstants {
     }
 
     interface Turret {
-        Translation3d OriginOffset = new Translation3d(-0.127, 0, 0.386);
+        Translation3d OriginOffset = new Translation3d(-0.12065, -0.1825625, 0.386);
     }
 
     interface Shooter {
@@ -33,28 +30,20 @@ public interface SimConstants {
         double WheelCircumferenceMeters = 2 * Math.PI * WheelRadiusMeters;
     }
 
-    interface IntakeSlide {
-        double DrivingGearDiameterMeters = Units.inchesToMeters(1);
-        double SlideRotationsToLinearDistanceMetersRatio = 2 * Math.PI * (DrivingGearDiameterMeters / 2);
-
-        Pose3d ExtendedPose = Pose3d.kZero;
-        Pose3d RetractedPose = new Pose3d(
-                Units.inchesToMeters(-10.616),
-                0,
-                Units.inchesToMeters(3.655),
-                Rotation3d.kZero
-        );
+    interface IntakePivot {
+        Translation3d OriginOffset = new Translation3d(0.24375, 0, 0.254);
+        Rotation2d ZeroedPositionToSimZero = Rotation2d.fromDegrees(113.2);
     }
 
-    interface HopperExtension {
-        Pose3d ExtendedPose = new Pose3d(
-                Units.inchesToMeters(12.606),
-                0,
-                0,
-                Rotation3d.kZero
-        );
-        Pose3d RetractedPose = Pose3d.kZero;
-    }
+//    interface HopperExtension {
+//        Pose3d ExtendedPose = new Pose3d(
+//                Units.inchesToMeters(12.606),
+//                0,
+//                0,
+//                Rotation3d.kZero
+//        );
+//        Pose3d RetractedPose = Pose3d.kZero;
+//    }
 
     interface Climb {
         double ClimbWeightKgs = Units.lbsToKilograms(125);
@@ -70,5 +59,9 @@ public interface SimConstants {
         );
 
         double Stage0MaxExtensionMeters = Units.inchesToMeters(7.652);
+    }
+
+    interface Hopper {
+        Translation3d OriginOffset = new Translation3d(-0.0273, 0.021, 0.11);
     }
 }

@@ -9,7 +9,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
 import frc.robot.subsystems.vision.cameras.CameraProperties;
-import frc.robot.subsystems.vision.cameras.TitanCamera;
+import frc.robot.subsystems.vision.cameras.Camera;
 import frc.robot.subsystems.vision.estimator.VisionPoseEstimator;
 import frc.robot.subsystems.vision.estimator.VisionResult;
 import frc.robot.utils.closeables.ToClose;
@@ -38,15 +38,15 @@ public class RealVisionRunner implements PhotonVisionRunner {
         private Matrix<N3, N3> cameraMatrix;
         private Matrix<N8, N1> distortionCoeffs;
 
-        public VisionIOApriltagReal(final TitanCamera titanCamera) {
-            this.photonCamera = titanCamera.getPhotonCamera();
+        public VisionIOApriltagReal(final Camera camera) {
+            this.photonCamera = camera.getPhotonCamera();
             this.cameraName = photonCamera.getName();
 
-            this.stdDevFactor = titanCamera.getStdDevFactor();
-            this.robotToCamera = titanCamera.getRobotToCameraTransform();
-            this.constrainedPnpParams = titanCamera.getConstrainedPnpParams();
+            this.stdDevFactor = camera.getStdDevFactor();
+            this.robotToCamera = camera.getRobotToCameraTransform();
+            this.constrainedPnpParams = camera.getConstrainedPnpParams();
 
-            final CameraProperties.Resolution resolution = titanCamera
+            final CameraProperties.Resolution resolution = camera
                     .getCameraProperties()
                     .getFirstResolution();
             this.resolutionWidthPx = resolution.getWidth();
@@ -103,10 +103,10 @@ public class RealVisionRunner implements PhotonVisionRunner {
 
         private final Transform3d robotToCamera;
 
-        public VisionIOCoralTrackingReal(final TitanCamera titanCamera) {
-            this.photonCamera = titanCamera.getPhotonCamera();
+        public VisionIOCoralTrackingReal(final Camera camera) {
+            this.photonCamera = camera.getPhotonCamera();
             this.cameraName = photonCamera.getName();
-            this.robotToCamera = titanCamera.getRobotToCameraTransform();
+            this.robotToCamera = camera.getRobotToCameraTransform();
         }
 
         @Override

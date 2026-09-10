@@ -4,13 +4,15 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXSConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.ParentDevice;
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.AdvancedHallSupportValue;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import edu.wpi.first.units.measure.*;
@@ -20,7 +22,7 @@ import frc.robot.utils.ctre.RefreshAll;
 
 public class HoodIOReal implements HoodIO {
     private final HardwareConstants.HoodConstants constants;
-    private final TalonFX motor;
+    private final TalonFXS motor;
 
     private final PositionVoltage positionVoltage;
     private final VoltageOut voltageOut;
@@ -35,7 +37,7 @@ public class HoodIOReal implements HoodIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
+        this.motor = new TalonFXS(constants.motorId(), bus.p6Bus);
 
         this.positionVoltage = new PositionVoltage(0);
         this.voltageOut = new VoltageOut(0);
@@ -69,21 +71,22 @@ public class HoodIOReal implements HoodIO {
 
     @Override
     public void config() {
-        final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
+        final TalonFXSConfiguration motorConfiguration = new TalonFXSConfiguration();
         motorConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
                 .withKV(0)
                 .withKA(0)
-                .withKP(120)
-                .withKD(40);
-        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
-        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
-        motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
+                .withKP(100)
+                .withKD(0);
+        motorConfiguration.CurrentLimits.SupplyCurrentLimit = 40;
+        motorConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
+        motorConfiguration.CurrentLimits.StatorCurrentLimit = 20;
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
-        motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
-        motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        motorConfiguration.Commutation.AdvancedHallSupport = AdvancedHallSupportValue.Enabled;
+        motorConfiguration.Commutation.MotorArrangement = MotorArrangementValue.Minion_JST;
+        motorConfiguration.ExternalFeedback.SensorToMechanismRatio = constants.gearing();
+        motorConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.upperLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;

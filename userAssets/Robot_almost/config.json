@@ -1,0 +1,71 @@
+{
+  "name": "almost",
+  "position": [
+    -0.179,
+    -0.323,
+    -0.045
+  ],
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 180
+    },
+    {
+      "axis": "z",
+      "degrees": 0
+    }
+  ],
+  "components": [
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 180
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [
+        -0.0275,
+        0,
+        0
+      ]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": -90
+        },
+        {
+          "axis": "z",
+          "degrees": -90
+        }
+      ],
+      "zeroedPosition": [
+        -0.02275,
+        0.1,
+        0
+      ]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 180
+        },
+        {
+          "axis": "z",
+          "degrees": 0
+        }
+      ],
+      "zeroedPosition": [
+        -0.7252,
+        1.4,
+        -0.91
+      ]
+    }
+  ]
+}

@@ -3,16 +3,13 @@ package frc.robot.subsystems.indexer.feeder;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.*;
-import com.ctre.phoenix6.sim.CANrangeSimState;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -30,17 +27,12 @@ import frc.robot.utils.sim.motors.TalonFXSim;
 
 public class FeederIOSim implements FeederIO {
     private static final double SIM_UPDATE_PERIOD_SEC = 0.005;
-    private static final double CloseEnoughMeters = 0.01;
 
     private final DeltaTime deltaTime;
     private final HardwareConstants.FeederConstants constants;
 
     private final TalonFX motor;
     private final TalonFXSim motorSim;
-
-    private final CANrange tof;
-    private final CANrangeConfiguration tofConfiguration;
-    private final CANrangeSimState tofSimState;
 
     private final VelocityTorqueCurrentFOC velocityTorqueCurrentFOC;
     private final VoltageOut voltageOut;
@@ -51,7 +43,7 @@ public class FeederIOSim implements FeederIO {
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    private final StatusSignal<Boolean> tofDetected;
+    private boolean tofDetected = false;
 
     public FeederIOSim(final HardwareConstants.FeederConstants constants) {
         this.deltaTime = new DeltaTime(true);
@@ -74,10 +66,6 @@ public class FeederIOSim implements FeederIO {
                 dcMotorSim::getAngularVelocityRadPerSec
         );
 
-        this.tof = new CANrange(constants.tofId(), bus.p6Bus);
-        this.tofConfiguration = new CANrangeConfiguration();
-        this.tofSimState = tof.getSimState();
-
         this.velocityTorqueCurrentFOC = new VelocityTorqueCurrentFOC(0);
         this.voltageOut = new VoltageOut(0);
 
@@ -87,16 +75,13 @@ public class FeederIOSim implements FeederIO {
         this.motorTorqueCurrent = motor.getTorqueCurrent(false);
         this.motorDeviceTemp = motor.getDeviceTemp(false);
 
-        this.tofDetected = tof.getIsDetected(false);
-
         RefreshAll.add(
                 bus,
                 motorPosition,
                 motorVelocity,
                 motorVoltage,
                 motorTorqueCurrent,
-                motorDeviceTemp,
-                tofDetected
+                motorDeviceTemp
         );
 
         config();
@@ -121,7 +106,7 @@ public class FeederIOSim implements FeederIO {
         inputs.rollerTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
         inputs.rollerTempCelsius = motorDeviceTemp.getValueAsDouble();
 
-        inputs.tofDetected = tofDetected.getValue();
+        inputs.tofDetected = tofDetected;
     }
 
     @Override
@@ -144,19 +129,12 @@ public class FeederIOSim implements FeederIO {
         feederConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(feederConfiguration));
 
-        tofConfiguration.ProximityParams.ProximityThreshold = 0.4;
-        tofConfiguration.ProximityParams.ProximityHysteresis = 0.01;
-        tofConfiguration.ProximityParams.MinSignalStrengthForValidMeasurement = 2500;
-        tofConfiguration.ToFParams.UpdateMode = UpdateModeValue.ShortRange100Hz;
-        Phoenix6Utils.tryUntilOk(tof, () -> tof.getConfigurator().apply(tofConfiguration));
-
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
                 motorPosition,
                 motorVelocity,
                 motorVoltage,
-                motorTorqueCurrent,
-                tofDetected
+                motorTorqueCurrent
         );
 
         BaseStatusSignal.setUpdateFrequencyForAll(
@@ -166,8 +144,7 @@ public class FeederIOSim implements FeederIO {
 
         ParentDevice.optimizeBusUtilizationForAll(
                 4,
-                motor,
-                tof
+                motor
         );
 
         final TalonFXSimState motorSimState = motor.getSimState();
@@ -189,12 +166,6 @@ public class FeederIOSim implements FeederIO {
 
     @Override
     public void setTOFDetected(final boolean detected) {
-        final double threshold = tofConfiguration.ProximityParams.ProximityThreshold;
-        final double hysteresis = tofConfiguration.ProximityParams.ProximityHysteresis;
-
-        tofSimState.setDistance(detected
-                ? threshold - hysteresis - CloseEnoughMeters
-                : threshold + hysteresis + CloseEnoughMeters
-        );
+        tofDetected = detected;
     }
 }

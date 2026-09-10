@@ -51,8 +51,8 @@ public interface SwerveIO {
     class ModuleIOInputs {
         public int index = 0;
 
-        public double drivePositionRots = 0;
-        public double driveVelocityRotsPerSec = 0;
+        public double driveRotorPositionRots = 0;
+        public double driveRotorVelocityRotsPerSec = 0;
         public double driveTorqueCurrentAmps = 0;
         public double driveTempCelsius = 0;
 
@@ -71,8 +71,8 @@ public interface SwerveIO {
         public final TurnMotorT turnMotor;
         public final EncoderT encoder;
 
-        private final StatusSignal<Angle> drivePosition;
-        private final StatusSignal<AngularVelocity> driveVelocity;
+        private final StatusSignal<Angle> driveRotorPosition;
+        private final StatusSignal<AngularVelocity> driveRotorVelocity;
         private final StatusSignal<Current> driveTorqueCurrent;
         private final StatusSignal<Temperature> driveTemperature;
 
@@ -92,8 +92,8 @@ public interface SwerveIO {
             this.turnMotor = turnMotor;
             this.encoder = encoder;
 
-            this.drivePosition = driveMotor.getPosition(false);
-            this.driveVelocity = driveMotor.getVelocity(false);
+            this.driveRotorPosition = driveMotor.getRotorPosition(false);
+            this.driveRotorVelocity = driveMotor.getRotorVelocity(false);
             this.driveTorqueCurrent = driveMotor.getTorqueCurrent(false);
             this.driveTemperature = driveMotor.getDeviceTemp(false);
 
@@ -103,7 +103,7 @@ public interface SwerveIO {
             this.turnTemperature = turnMotor.getDeviceTemp(false);
 
             RefreshAll.add(CANBus.fromPhoenix6CANBus(driveMotor.getNetwork()),
-                    drivePosition, driveVelocity, driveTorqueCurrent, driveTemperature);
+                    driveRotorPosition, driveRotorVelocity, driveTorqueCurrent, driveTemperature);
             RefreshAll.add(CANBus.fromPhoenix6CANBus(turnMotor.getNetwork()),
                     turnPosition, turnVelocity, turnTorqueCurrent, turnTemperature);
         }
@@ -111,8 +111,8 @@ public interface SwerveIO {
         public void updateInputs(final ModuleIOInputs inputs) {
             inputs.index = index;
 
-            inputs.drivePositionRots = drivePosition.getValueAsDouble();
-            inputs.driveVelocityRotsPerSec = driveVelocity.getValueAsDouble();
+            inputs.driveRotorPositionRots = driveRotorPosition.getValueAsDouble();
+            inputs.driveRotorVelocityRotsPerSec = driveRotorVelocity.getValueAsDouble();
             inputs.driveTorqueCurrentAmps = driveTorqueCurrent.getValueAsDouble();
             inputs.driveTempCelsius = driveTemperature.getValueAsDouble();
 

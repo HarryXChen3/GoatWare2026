@@ -4,15 +4,15 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXSConfiguration;
 import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.ParentDevice;
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.*;
 import com.ctre.phoenix6.sim.ChassisReference;
-import com.ctre.phoenix6.sim.TalonFXSimState;
+import com.ctre.phoenix6.sim.TalonFXSSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.*;
@@ -24,7 +24,7 @@ import frc.robot.utils.control.DeltaTime;
 import frc.robot.utils.ctre.Phoenix6Utils;
 import frc.robot.utils.ctre.RefreshAll;
 import frc.robot.utils.sim.SimUtils;
-import frc.robot.utils.sim.motors.TalonFXSim;
+import frc.robot.utils.sim.motors.TalonFXSSim;
 
 import java.util.List;
 
@@ -34,12 +34,12 @@ public class ShooterIOSim implements ShooterIO {
     private final DeltaTime deltaTime;
     private final HardwareConstants.ShooterConstants constants;
 
-    private final TalonFX masterMotor;
-    private final TalonFX followerMotor;
+    private final TalonFXS masterMotor;
+    private final TalonFXS followerMotor;
 
-    private final TalonFXSim motorsSim;
+    private final TalonFXSSim motorsSim;
 
-    private final VelocityTorqueCurrentFOC velocityTorqueCurrentFOC;
+    private final VelocityVoltage velocityVoltage;
     private final VoltageOut voltageOut;
     private final Follower follower;
 
@@ -60,15 +60,15 @@ public class ShooterIOSim implements ShooterIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        this.masterMotor = new TalonFX(constants.masterId(), bus.p6Bus);
-        this.followerMotor = new TalonFX(constants.followerId(), bus.p6Bus);
+        this.masterMotor = new TalonFXS(constants.masterId(), bus.p6Bus);
+        this.followerMotor = new TalonFXS(constants.followerId(), bus.p6Bus);
 
-        final DCMotor dcMotor = DCMotor.getKrakenX60Foc(2);
+        final DCMotor dcMotor = DCMotor.getMinion(2);
         final DCMotorSim dcMotorSim = new DCMotorSim(
                 LinearSystemId.createDCMotorSystem(dcMotor, 0.01, constants.gearing()),
                 dcMotor
         );
-        this.motorsSim = new TalonFXSim(
+        this.motorsSim = new TalonFXSSim(
                 List.of(masterMotor, followerMotor),
                 constants.gearing(),
                 dcMotorSim::update,
@@ -77,7 +77,7 @@ public class ShooterIOSim implements ShooterIO {
                 dcMotorSim::getAngularVelocityRadPerSec
         );
 
-        this.velocityTorqueCurrentFOC = new VelocityTorqueCurrentFOC(0);
+        this.velocityVoltage = new VelocityVoltage(0);
         this.voltageOut = new VoltageOut(0);
         this.follower = new Follower(masterMotor.getDeviceID(), MotorAlignmentValue.Opposed);
 
@@ -139,7 +139,7 @@ public class ShooterIOSim implements ShooterIO {
 
     @Override
     public void config() {
-        final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
+        final TalonFXSConfiguration motorConfiguration = new TalonFXSConfiguration();
         motorConfiguration.Slot0 = new Slot0Configs()
                 .withKS(5)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
@@ -147,12 +147,9 @@ public class ShooterIOSim implements ShooterIO {
                 .withKA(12.55)
                 .withKP(160)
                 .withKD(20);
-        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 80;
-        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -80;
         motorConfiguration.CurrentLimits.StatorCurrentLimit = 80;
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
-        motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
+        motorConfiguration.ExternalFeedback.SensorToMechanismRatio = constants.gearing();
         motorConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
@@ -183,18 +180,16 @@ public class ShooterIOSim implements ShooterIO {
                 followerMotor
         );
 
-        final TalonFXSimState masterMotorSimState = masterMotor.getSimState();
-        masterMotorSimState.Orientation = ChassisReference.CounterClockwise_Positive;
-        masterMotorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
+        final TalonFXSSimState masterMotorSimState = masterMotor.getSimState();
+        masterMotorSimState.MotorOrientation = ChassisReference.CounterClockwise_Positive;
 
-        final TalonFXSimState followerMotorSimState = followerMotor.getSimState();
-        followerMotorSimState.Orientation = ChassisReference.Clockwise_Positive;
-        followerMotorSimState.setMotorType(TalonFXSimState.MotorType.KrakenX60);
+        final TalonFXSSimState followerMotorSimState = followerMotor.getSimState();
+        followerMotorSimState.MotorOrientation = ChassisReference.Clockwise_Positive;
     }
 
     @Override
     public void toShooterVelocity(final double shooterVelocityRotsPerSec) {
-        masterMotor.setControl(velocityTorqueCurrentFOC.withVelocity(shooterVelocityRotsPerSec));
+        masterMotor.setControl(velocityVoltage.withVelocity(shooterVelocityRotsPerSec));
         followerMotor.setControl(follower);
     }
 

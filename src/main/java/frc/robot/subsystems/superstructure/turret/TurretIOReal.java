@@ -1,10 +1,8 @@
 package frc.robot.subsystems.superstructure.turret;
 
 import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
@@ -25,24 +23,20 @@ public class TurretIOReal implements TurretIO {
     private final HardwareConstants.TurretConstants constants;
 
     private final TalonFX motor;
-    private final CANcoder primaryCANcoder;
-    private final CANcoder secondaryCANcoder;
+    private final CANcoder CANcoder;
 
     private final PositionVoltage positionVoltage;
     private final MotionMagicExpoVoltage motionMagicExpoVoltage;
     private final VoltageOut voltageOut;
 
     private final StatusSignal<Angle> motorPosition;
+    private final StatusSignal<Angle> motorRotorPosition;
     private final StatusSignal<AngularVelocity> motorVelocity;
     private final StatusSignal<Voltage> motorVoltage;
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    private final StatusSignal<Angle> primaryCANcoderPosition;
-    private final StatusSignal<Angle> primaryCANcoderAbsolutePosition;
-
-    private final StatusSignal<Angle> secondaryCANcoderPosition;
-    private final StatusSignal<Angle> secondaryCANcoderAbsolutePosition;
+    private final StatusSignal<Angle> CANcoderPosition;
 
     private boolean positionSeeded = false;
 
@@ -51,34 +45,30 @@ public class TurretIOReal implements TurretIO {
 
         final HardwareConstants.CANBus bus = constants.CANBus();
         this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
-        this.primaryCANcoder = new CANcoder(constants.primaryCANcoderId(), bus.p6Bus);
-        this.secondaryCANcoder = new CANcoder(constants.secondaryCANcoderId(), bus.p6Bus);
+        this.CANcoder = new CANcoder(constants.CANcoderId(), bus.p6Bus);
 
         this.positionVoltage = new PositionVoltage(0);
         this.motionMagicExpoVoltage = new MotionMagicExpoVoltage(0);
         this.voltageOut = new VoltageOut(0);
 
         this.motorPosition = motor.getPosition(false);
+        this.motorRotorPosition = motor.getRotorPosition(false);
         this.motorVelocity = motor.getVelocity(false);
         this.motorVoltage = motor.getMotorVoltage(false);
         this.motorTorqueCurrent = motor.getTorqueCurrent(false);
         this.motorDeviceTemp = motor.getDeviceTemp(false);
 
-        this.primaryCANcoderPosition = primaryCANcoder.getPosition(false);
-        this.primaryCANcoderAbsolutePosition = primaryCANcoder.getAbsolutePosition(false);
-
-        this.secondaryCANcoderPosition = secondaryCANcoder.getPosition(false);
-        this.secondaryCANcoderAbsolutePosition = secondaryCANcoder.getAbsolutePosition(false);
+        this.CANcoderPosition = CANcoder.getPosition(false);
 
         RefreshAll.add(
                 bus,
                 motorPosition,
+                motorRotorPosition,
                 motorVelocity,
                 motorVoltage,
                 motorTorqueCurrent,
                 motorDeviceTemp,
-                primaryCANcoderPosition,
-                secondaryCANcoderPosition
+                CANcoderPosition
         );
 
         config();
@@ -87,20 +77,16 @@ public class TurretIOReal implements TurretIO {
     @Override
     public void updateInputs(final TurretIOInputs inputs) {
         inputs.motorPositionRots = motorPosition.getValueAsDouble();
+        inputs.motorRotorPositionRots = motorRotorPosition.getValueAsDouble();
         inputs.motorVelocityRotsPerSec = motorVelocity.getValueAsDouble();
         inputs.motorVoltage = motorVoltage.getValueAsDouble();
         inputs.motorTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
         inputs.motorTempCelsius = motorDeviceTemp.getValueAsDouble();
 
-        inputs.primaryCANcoderPositionRots = primaryCANcoderPosition.getValueAsDouble();
-        inputs.primaryCANcoderAbsolutePositionRots = primaryCANcoderAbsolutePosition.getValueAsDouble();
-
-        inputs.secondaryCANcoderPositionRots = secondaryCANcoderPosition.getValueAsDouble();
-        inputs.secondaryCANcoderAbsolutePositionRots = secondaryCANcoderAbsolutePosition.getValueAsDouble();
+        inputs.CANcoderPositionRots = CANcoderPosition.getValueAsDouble();
 
         inputs.motorConnected = motor.isConnected();
-        inputs.primaryCANcoderConnected = primaryCANcoder.isConnected();
-        inputs.secondaryCANcoderConnected = secondaryCANcoder.isConnected();
+        inputs.CANcoderConnected = CANcoder.isConnected();
         inputs.positionSeeded = positionSeeded;
     }
 
@@ -109,55 +95,35 @@ public class TurretIOReal implements TurretIO {
         final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
         motorConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0)
-                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
-                .withKV(0)
-                .withKA(0)
-                .withKP(120)
-                .withKD(40);
+                .withKP(250)
+                .withKD(0.1);
         motorConfiguration.MotionMagic.MotionMagicCruiseVelocity = 0;
         motorConfiguration.MotionMagic.MotionMagicExpo_kV = 0.12;
         motorConfiguration.MotionMagic.MotionMagicExpo_kA = 0.1;
-        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
-        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
-        motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
+        motorConfiguration.CurrentLimits.SupplyCurrentLimit = 30;
+        motorConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
+        motorConfiguration.CurrentLimits.StatorCurrentLimit = 100;
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
         motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        motorConfiguration.Feedback.SensorToMechanismRatio = constants.motorToGearboxGearing()
-                * constants.gearboxToTurretGearing();
-        motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        motorConfiguration.Feedback.SensorToMechanismRatio = constants.motorToTurretGearing();
+        motorConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitThreshold = constants.forwardLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitThreshold = constants.reverseLimitRots();
         motorConfiguration.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        motorConfiguration.Voltage.PeakForwardVoltage = 6;
+        motorConfiguration.Voltage.PeakReverseVoltage = -6;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
-
-        final CANcoderConfiguration primaryCANcoderConfiguration = new CANcoderConfiguration();
-        primaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
-        primaryCANcoderConfiguration.MagnetSensor.MagnetOffset = constants.primaryCANcoderOffsetRots();
-        primaryCANcoderConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
-        Phoenix6Utils.tryUntilOk(
-                primaryCANcoder,
-                () -> primaryCANcoder.getConfigurator().apply(primaryCANcoderConfiguration)
-        );
-
-        final CANcoderConfiguration secondaryCANcoderConfiguration = new CANcoderConfiguration();
-        secondaryCANcoderConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-        secondaryCANcoderConfiguration.MagnetSensor.MagnetOffset = constants.secondaryCANcoderOffsetRots();
-        secondaryCANcoderConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
-        Phoenix6Utils.tryUntilOk(
-                secondaryCANcoder,
-                () -> secondaryCANcoder.getConfigurator().apply(secondaryCANcoderConfiguration)
-        );
 
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
                 motorPosition,
+                motorRotorPosition,
                 motorVelocity,
                 motorVoltage,
                 motorTorqueCurrent,
-                primaryCANcoderPosition,
-                secondaryCANcoderPosition
+                CANcoderPosition
         );
 
         BaseStatusSignal.setUpdateFrequencyForAll(
@@ -168,8 +134,7 @@ public class TurretIOReal implements TurretIO {
         ParentDevice.optimizeBusUtilizationForAll(
                 4,
                 motor,
-                primaryCANcoder,
-                secondaryCANcoder
+                CANcoder
         );
     }
 

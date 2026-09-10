@@ -9,7 +9,7 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.simulation.SimCameraProperties;
 
-public enum TitanCamera {
+public enum Camera {
     CAMERA(
             "Camera",
             Constants.Vision.CAMERA,
@@ -71,7 +71,7 @@ public enum TitanCamera {
     private final TitanCameraCalibration cameraCalibration;
     private final boolean driverCam;
 
-    TitanCamera(
+    Camera(
             final String photonCameraName,
             final Transform3d robotToCameraTransform,
             final PhotonPoseEstimator.ConstrainedSolvepnpParams constrainedPnpParams,
@@ -106,7 +106,7 @@ public enum TitanCamera {
         this.photonCamera.setDriverMode(driverCam);
     }
 
-    TitanCamera(
+    Camera(
             final String photonCameraName,
             final Transform3d robotToCameraTransform,
             final PhotonPoseEstimator.ConstrainedSolvepnpParams constrainedPnpParams,

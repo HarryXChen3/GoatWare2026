@@ -933,7 +933,7 @@ public class Swerve extends SubsystemExt {
         final Supplier<double[]> drivePositionsSupplier = () -> {
             final double[] positionRots = new double[SwerveConstants.ModuleCount];
             for (int i = 0; i < positionRots.length; i++) {
-                positionRots[i] = moduleInputs[i].drivePositionRots;
+                positionRots[i] = moduleInputs[i].driveRotorPositionRots;
             }
             return positionRots;
         };

@@ -1,10 +1,14 @@
 package frc.robot.subsystems.indexer.hopper;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareConstants;
+import frc.robot.constants.SimConstants;
 import frc.robot.utils.commands.ext.SubsystemExt;
 import org.littletonrobotics.junction.Logger;
 
@@ -85,6 +89,13 @@ public class Hopper extends SubsystemExt {
         return startEnd(
                 () -> setGoalImpl(goal),
                 () -> setGoalImpl(Goal.OFF)
+        );
+    }
+
+    public Pose3d getComponentPose() {
+        return new Pose3d(
+                SimConstants.Hopper.OriginOffset,
+                new Rotation3d(0, 0, Units.rotationsToRadians(inputs.hopperPositionRots))
         );
     }
 }

@@ -3,7 +3,7 @@ package frc.robot.subsystems.vision;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import frc.robot.subsystems.vision.cameras.TitanCamera;
+import frc.robot.subsystems.vision.cameras.Camera;
 import frc.robot.subsystems.vision.estimator.VisionPoseEstimator;
 import frc.robot.subsystems.vision.estimator.VisionResult;
 import frc.robot.utils.closeables.ToClose;
@@ -20,8 +20,8 @@ public class ReplayVisionRunner implements PhotonVisionRunner {
     public static class VisionIOReplay implements VisionIO {
         private final PhotonCamera photonCamera;
 
-        public VisionIOReplay(final TitanCamera titanCamera) {
-            this.photonCamera = titanCamera.getPhotonCamera();
+        public VisionIOReplay(final Camera camera) {
+            this.photonCamera = camera.getPhotonCamera();
         }
     }
 

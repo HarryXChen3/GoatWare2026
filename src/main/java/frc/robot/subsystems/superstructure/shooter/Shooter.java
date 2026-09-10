@@ -16,7 +16,7 @@ import java.util.function.DoubleSupplier;
 
 public class Shooter extends SubsystemExt {
     protected static final String LogKey = "Shooter";
-    private static final double VelocityToleranceRotsPerSec = 0.5;
+    private static final double VelocityToleranceRotsPerSec = 1;
 
     public enum Goal {
         OFF(0),

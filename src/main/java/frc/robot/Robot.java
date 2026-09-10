@@ -29,7 +29,7 @@ import frc.robot.subsystems.indexer.feeder.Feeder;
 import frc.robot.subsystems.indexer.hopper.Hopper;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.rollers.IntakeRollers;
-import frc.robot.subsystems.intake.slide.IntakeSlide;
+import frc.robot.subsystems.intake.pivot.IntakePivot;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.hood.Hood;
 import frc.robot.subsystems.superstructure.shooter.Shooter;
@@ -114,17 +114,17 @@ public class Robot extends LoggedRobot {
     public final Feeder feeder = new Feeder(Constants.CURRENT_MODE, HardwareConstants.FEEDER_CONSTANTS);
     public final Indexer indexer = new Indexer(hopper, feeder);
 
-    public final IntakeSlide intakeSlide = new IntakeSlide(
+    public final IntakePivot intakePivot = new IntakePivot(
             Constants.CURRENT_MODE,
-            HardwareConstants.INTAKE_SLIDE_CONSTANTS
+            HardwareConstants.INTAKE_PIVOT_CONSTANTS
     );
     public final IntakeRollers intakeRollers = new IntakeRollers(
             Constants.CURRENT_MODE,
             HardwareConstants.INTAKE_CONSTANTS
     );
-    public final Intake intake = new Intake(intakeSlide, intakeRollers);
+    public final Intake intake = new Intake(intakePivot, intakeRollers);
 
-    public final Climb climb = new Climb(Constants.CURRENT_MODE, HardwareConstants.CLIMB_CONSTANTS);
+    public final Climb climb = new Climb(Constants.RobotMode.DISABLED, HardwareConstants.CLIMB_CONSTANTS);
 
     public final FuelState fuelState = new FuelState(Constants.CURRENT_MODE, swerve, intake, indexer, superstructure);
     public final ShootCommands shootCommands = new ShootCommands(
@@ -388,8 +388,8 @@ public class Robot extends LoggedRobot {
 
     public void logComponentPoses() {
         final Pose3d[] superstructurePoses = superstructure.getComponentPoses();
-        final Pose3d[] intakeSlidePoses = intakeSlide.getComponentPoses();
-        final Pose3d[] climbPoses = climb.getComponentPoses();
+        final Pose3d[] intakePivotPoses = intakePivot.getComponentPoses();
+//        final Pose3d[] climbPoses = climb.getComponentPoses();
         Logger.recordOutput(
                 "ZeroedComponents",
                 Pose3d.kZero,
@@ -402,11 +402,12 @@ public class Robot extends LoggedRobot {
         Logger.recordOutput(
                 "Components",
                 superstructurePoses[0], //turret
-                intakeSlidePoses[1],
-                intakeSlidePoses[0],
-                superstructurePoses[1], //hood
-                climbPoses[0],
-                climbPoses[1]
+                intakePivotPoses[0],
+//                intakePivotPoses[1],
+//                superstructurePoses[1], //hood
+                hopper.getComponentPose()
+//                climbPoses[0],
+//                climbPoses[1]
         );
     }
 

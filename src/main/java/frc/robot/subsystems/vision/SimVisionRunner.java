@@ -8,7 +8,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.vision.cameras.CameraProperties;
-import frc.robot.subsystems.vision.cameras.TitanCamera;
+import frc.robot.subsystems.vision.cameras.Camera;
 import frc.robot.subsystems.vision.estimator.VisionPoseEstimator;
 import frc.robot.subsystems.vision.estimator.VisionResult;
 import frc.robot.utils.closeables.ToClose;
@@ -36,29 +36,29 @@ public class SimVisionRunner implements PhotonVisionRunner {
         private final int resolutionWidthPx;
         private final int resolutionHeightPx;
 
-        public VisionIOApriltagsSim(final TitanCamera titanCamera, final VisionSystemSim visionSystemSim) {
-            this.photonCamera = titanCamera.getPhotonCamera();
+        public VisionIOApriltagsSim(final Camera camera, final VisionSystemSim visionSystemSim) {
+            this.photonCamera = camera.getPhotonCamera();
             this.cameraName = photonCamera.getName();
 
-            this.stdDevFactor = titanCamera.getStdDevFactor();
-            this.robotToCamera = titanCamera.getRobotToCameraTransform();
-            this.constrainedPnpParams = titanCamera.getConstrainedPnpParams();
+            this.stdDevFactor = camera.getStdDevFactor();
+            this.robotToCamera = camera.getRobotToCameraTransform();
+            this.constrainedPnpParams = camera.getConstrainedPnpParams();
 
-            final CameraProperties.Resolution resolution = titanCamera
+            final CameraProperties.Resolution resolution = camera
                     .getCameraProperties()
                     .getFirstResolution();
             this.resolutionWidthPx = resolution.getWidth();
             this.resolutionHeightPx = resolution.getHeight();
 
             final PhotonCameraSim photonCameraSim =
-                    new PhotonCameraSim(titanCamera.getPhotonCamera(), titanCamera.toSimCameraProperties());
+                    new PhotonCameraSim(camera.getPhotonCamera(), camera.toSimCameraProperties());
 
             photonCameraSim.enableDrawWireframe(true);
             photonCameraSim.enableRawStream(true);
             photonCameraSim.enableProcessedStream(true);
 
             ToClose.add(photonCameraSim);
-            visionSystemSim.addCamera(photonCameraSim, titanCamera.getRobotToCameraTransform());
+            visionSystemSim.addCamera(photonCameraSim, camera.getRobotToCameraTransform());
         }
 
         @Override
@@ -89,27 +89,27 @@ public class SimVisionRunner implements PhotonVisionRunner {
         private final int resolutionWidthPx;
         private final int resolutionHeightPx;
 
-        public VisionIOCoralTrackingSim(final TitanCamera titanCamera, final VisionSystemSim visionSystemSim) {
-            this.photonCamera = titanCamera.getPhotonCamera();
+        public VisionIOCoralTrackingSim(final Camera camera, final VisionSystemSim visionSystemSim) {
+            this.photonCamera = camera.getPhotonCamera();
             this.cameraName = photonCamera.getName();
 
-            this.stdDevFactor = titanCamera.getStdDevFactor();
-            this.robotToCamera = titanCamera.getRobotToCameraTransform();
-            final CameraProperties.Resolution resolution = titanCamera
+            this.stdDevFactor = camera.getStdDevFactor();
+            this.robotToCamera = camera.getRobotToCameraTransform();
+            final CameraProperties.Resolution resolution = camera
                     .getCameraProperties()
                     .getFirstResolution();
             this.resolutionWidthPx = resolution.getWidth();
             this.resolutionHeightPx = resolution.getHeight();
 
             final PhotonCameraSim photonCameraSim =
-                    new PhotonCameraSim(titanCamera.getPhotonCamera(), titanCamera.toSimCameraProperties());
+                    new PhotonCameraSim(camera.getPhotonCamera(), camera.toSimCameraProperties());
 
             photonCameraSim.enableDrawWireframe(true);
             photonCameraSim.enableRawStream(true);
             photonCameraSim.enableProcessedStream(true);
 
             ToClose.add(photonCameraSim);
-            visionSystemSim.addCamera(photonCameraSim, titanCamera.getRobotToCameraTransform());
+            visionSystemSim.addCamera(photonCameraSim, camera.getRobotToCameraTransform());
         }
 
         @Override

@@ -51,7 +51,7 @@ public class HopperIOSim implements HopperIO {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
-        this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
+        this.motor = new TalonFX(constants.motor1Id(), bus.p6Bus);
 
         final DCMotor dcMotor = DCMotor.getKrakenX60Foc(1);
         final DCMotorSim dcMotorSim = new DCMotorSim(

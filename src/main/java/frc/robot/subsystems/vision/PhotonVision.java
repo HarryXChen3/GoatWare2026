@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.drive.constants.SwerveConstants;
-import frc.robot.subsystems.vision.cameras.TitanCamera;
+import frc.robot.subsystems.vision.cameras.Camera;
 import frc.robot.subsystems.vision.estimator.VisionResult;
 import frc.robot.utils.PoseUtils;
 import frc.robot.utils.gyro.GyroUtils;
@@ -90,7 +90,7 @@ public class PhotonVision extends VirtualSubsystem {
             case REAL -> new RealVisionRunner(
                     PhotonVision.apriltagFieldLayout,
                     PhotonVision.makeVisionIOInputsMap(
-                            new RealVisionRunner.VisionIOApriltagReal(TitanCamera.CAMERA)
+                            new RealVisionRunner.VisionIOApriltagReal(Camera.CAMERA)
                     )
             );
             case SIM -> {
@@ -112,7 +112,7 @@ public class PhotonVision extends VirtualSubsystem {
                         visionSystemSim,
                         PhotonVision.makeVisionIOInputsMap(
                                 new SimVisionRunner.VisionIOApriltagsSim(
-                                        TitanCamera.CAMERA, visionSystemSim
+                                        Camera.CAMERA, visionSystemSim
                                 )
                         )
                 );
@@ -120,7 +120,7 @@ public class PhotonVision extends VirtualSubsystem {
             case REPLAY -> new ReplayVisionRunner(
                     PhotonVision.apriltagFieldLayout,
                     PhotonVision.makeVisionIOInputsMap(
-                            new ReplayVisionRunner.VisionIOReplay(TitanCamera.CAMERA)
+                            new ReplayVisionRunner.VisionIOReplay(Camera.CAMERA)
                     )
             );
             case DISABLED -> new PhotonVisionRunner() {};

@@ -19,7 +19,7 @@ public class IntakeRollers extends SubsystemExt {
 
     public enum Goal {
         OFF(0),
-        INTAKE(10);
+        INTAKE(35);
 
         public final double velocityRotsPerSec;
 

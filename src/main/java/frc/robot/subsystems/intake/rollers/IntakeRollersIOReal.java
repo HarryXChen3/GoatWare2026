@@ -5,7 +5,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -22,7 +22,7 @@ public class IntakeRollersIOReal implements IntakeRollersIO {
     private final HardwareConstants.IntakeRollersConstants constants;
     private final TalonFX motor;
 
-    private final VelocityTorqueCurrentFOC velocityTorqueCurrentFOC;
+    private final VelocityVoltage velocityVoltage;
     private final VoltageOut voltageOut;
 
     private final StatusSignal<Angle> motorPosition;
@@ -37,7 +37,7 @@ public class IntakeRollersIOReal implements IntakeRollersIO {
         final HardwareConstants.CANBus bus = constants.CANBus();
         this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
 
-        this.velocityTorqueCurrentFOC = new VelocityTorqueCurrentFOC(0);
+        this.velocityVoltage = new VelocityVoltage(0);
         this.voltageOut = new VoltageOut(0);
 
         this.motorPosition = motor.getPosition(false);
@@ -73,18 +73,20 @@ public class IntakeRollersIOReal implements IntakeRollersIO {
         motorConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
-                .withKV(0)
+                .withKV(0.24)
                 .withKA(0)
-                .withKP(120)
-                .withKD(40);
-        motorConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
-        motorConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
-        motorConfiguration.CurrentLimits.StatorCurrentLimit = 60;
+                .withKP(1)
+                .withKD(0);
+        motorConfiguration.CurrentLimits.SupplyCurrentLimit = 30;
+        motorConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
+        motorConfiguration.CurrentLimits.SupplyCurrentLowerTime = 0;
+        motorConfiguration.CurrentLimits.StatorCurrentLimit = 80;
         motorConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
         motorConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
         motorConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
-        motorConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        motorConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        motorConfiguration.Voltage.PeakReverseVoltage = 0;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(motorConfiguration));
 
         BaseStatusSignal.setUpdateFrequencyForAll(
@@ -108,7 +110,7 @@ public class IntakeRollersIOReal implements IntakeRollersIO {
 
     @Override
     public void toIntakeVelocity(final double intakeVelocityRotsPerSec) {
-        motor.setControl(velocityTorqueCurrentFOC.withVelocity(intakeVelocityRotsPerSec));
+        motor.setControl(velocityVoltage.withVelocity(intakeVelocityRotsPerSec));
     }
 
     @Override

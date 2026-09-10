@@ -102,8 +102,7 @@ public class Turret extends SubsystemExt {
         return !inputs.positionSeeded
                 && MathUtil.isNear(0, inputs.motorVelocityRotsPerSec, 1e-3)
                 && inputs.motorConnected
-                && inputs.primaryCANcoderConnected
-                && inputs.secondaryCANcoderConnected;
+                && inputs.CANcoderConnected;
     }
 
     @Override
@@ -116,10 +115,10 @@ public class Turret extends SubsystemExt {
         if (shouldSeedPosition()) {
             final Rotation2d position = CRT.solve(
                     constants.drivenTurretGearTeeth(),
-                    inputs.primaryCANcoderAbsolutePositionRots,
-                    constants.primaryCANcoderGearTeeth(),
-                    inputs.secondaryCANcoderAbsolutePositionRots,
-                    constants.secondaryCANcoderGearTeeth(),
+                    inputs.motorRotorPositionRots + constants.motorEncoderOffsetRots(),
+                    constants.motorPinionTeeth(),
+                    inputs.CANcoderPositionRots + constants.CANcoderOffsetRots(),
+                    constants.CANcoderPinionTeeth(),
                     constants.forwardLimitRots()
             );
             turretIO.seedTurretPosition(position);

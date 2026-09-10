@@ -3,12 +3,10 @@ package frc.robot.subsystems.indexer.feeder;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.*;
@@ -20,9 +18,8 @@ import frc.robot.utils.ctre.RefreshAll;
 public class FeederIOReal implements FeederIO {
     private final HardwareConstants.FeederConstants constants;
     private final TalonFX motor;
-    private final CANrange tof;
 
-    private final VelocityTorqueCurrentFOC velocityTorqueCurrentFOC;
+    private final VelocityVoltage velocityVoltage;
     private final VoltageOut voltageOut;
 
     private final StatusSignal<Angle> motorPosition;
@@ -31,16 +28,13 @@ public class FeederIOReal implements FeederIO {
     private final StatusSignal<Current> motorTorqueCurrent;
     private final StatusSignal<Temperature> motorDeviceTemp;
 
-    private final StatusSignal<Boolean> tofDetected;
-
     public FeederIOReal(final HardwareConstants.FeederConstants constants) {
         this.constants = constants;
 
         final HardwareConstants.CANBus bus = constants.CANBus();
         this.motor = new TalonFX(constants.motorId(), bus.p6Bus);
-        this.tof = new CANrange(constants.tofId(), bus.p6Bus);
 
-        this.velocityTorqueCurrentFOC = new VelocityTorqueCurrentFOC(0);
+        this.velocityVoltage = new VelocityVoltage(0);
         this.voltageOut = new VoltageOut(0);
 
         this.motorPosition = motor.getPosition(false);
@@ -49,16 +43,13 @@ public class FeederIOReal implements FeederIO {
         this.motorTorqueCurrent = motor.getTorqueCurrent(false);
         this.motorDeviceTemp = motor.getDeviceTemp(false);
 
-        this.tofDetected = tof.getIsDetected(false);
-
         RefreshAll.add(
                 bus,
                 motorPosition,
                 motorVelocity,
                 motorVoltage,
                 motorTorqueCurrent,
-                motorDeviceTemp,
-                tofDetected
+                motorDeviceTemp
         );
 
         config();
@@ -72,7 +63,7 @@ public class FeederIOReal implements FeederIO {
         inputs.rollerTorqueCurrentAmps = motorTorqueCurrent.getValueAsDouble();
         inputs.rollerTempCelsius = motorDeviceTemp.getValueAsDouble();
 
-        inputs.tofDetected = tofDetected.getValue();
+        inputs.tofDetected = false;
     }
 
     @Override
@@ -81,34 +72,26 @@ public class FeederIOReal implements FeederIO {
         feederConfiguration.Slot0 = new Slot0Configs()
                 .withKS(0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign)
-                .withKV(0)
+                .withKV(0.2800000011920929)
                 .withKA(0)
-                .withKP(60)
-                .withKD(12);
-        feederConfiguration.TorqueCurrent.PeakForwardTorqueCurrent = 60;
-        feederConfiguration.TorqueCurrent.PeakReverseTorqueCurrent = -60;
-        feederConfiguration.CurrentLimits.StatorCurrentLimit = 60;
+                .withKP(160)
+                .withKD(0);
+        feederConfiguration.CurrentLimits.SupplyCurrentLimit = 40;
+        feederConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
+        feederConfiguration.CurrentLimits.StatorCurrentLimit = 120;
         feederConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
         feederConfiguration.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
         feederConfiguration.Feedback.SensorToMechanismRatio = constants.gearing();
         feederConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        feederConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        feederConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         Phoenix6Utils.tryUntilOk(motor, () -> motor.getConfigurator().apply(feederConfiguration));
-
-        final CANrangeConfiguration canRangeConfiguration = new CANrangeConfiguration();
-        canRangeConfiguration.ProximityParams.ProximityThreshold = 0.05;
-        canRangeConfiguration.ProximityParams.ProximityHysteresis = 0.02;
-        canRangeConfiguration.ProximityParams.MinSignalStrengthForValidMeasurement = 2500;
-        canRangeConfiguration.ToFParams.UpdateMode = UpdateModeValue.ShortRange100Hz;
-        Phoenix6Utils.tryUntilOk(tof, () -> tof.getConfigurator().apply(canRangeConfiguration));
 
         BaseStatusSignal.setUpdateFrequencyForAll(
                 100,
                 motorPosition,
                 motorVelocity,
                 motorVoltage,
-                motorTorqueCurrent,
-                tofDetected
+                motorTorqueCurrent
         );
 
         BaseStatusSignal.setUpdateFrequencyForAll(
@@ -118,14 +101,13 @@ public class FeederIOReal implements FeederIO {
 
         ParentDevice.optimizeBusUtilizationForAll(
                 4,
-                motor,
-                tof
+                motor
         );
     }
 
     @Override
     public void toFeederVelocity(final double feederVelocityRotsPerSec) {
-        motor.setControl(velocityTorqueCurrentFOC.withVelocity(feederVelocityRotsPerSec));
+        motor.setControl(velocityVoltage.withVelocity(feederVelocityRotsPerSec));
     }
 
     @Override

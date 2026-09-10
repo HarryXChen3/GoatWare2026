@@ -19,7 +19,7 @@ public class Feeder extends SubsystemExt {
 
     public enum Goal {
         OFF(0),
-        FEED(5);
+        FEED(40);
 
         public final double velocityRotsPerSec;
 
