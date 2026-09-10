@@ -214,13 +214,16 @@ public class ShootCommands extends VirtualSubsystem {
                         waitUntil(targetValid
                                 .and(swerveReady)
                                 .and(superstructure::atSetpoint)),
-                        Commands.deadline(
+                        deadline(
                                 indexer.toFeed()
                                         .onlyWhile(targetValid
                                                 .and(swerveReady)
                                                 .and(superstructure::atSetpoint)),
-                                intake.stowFeed().asProxy()
-                                        .unless(intake.isIntaking)
+                                repeatingSequence(
+                                        waitUntil(intake.isIntaking.negate()),
+                                        intake.stowFeed().asProxy()
+                                                .until(intake.isIntaking)
+                                )
                         )
                 )
                         .onlyIf(fuelState.hasFuel)
