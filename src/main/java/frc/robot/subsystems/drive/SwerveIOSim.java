@@ -4,6 +4,7 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.*;
 import edu.wpi.first.math.Matrix;
@@ -119,6 +120,12 @@ public class SwerveIOSim implements SwerveIO {
         }
         inputs.states = states;
         inputs.gyroRotation3d = drivetrain.getRotation3d();
+
+        final Pigeon2 pigeon2 = drivetrain.getPigeon2();
+        inputs.gyroRollDeg = pigeon2.getRoll().getValueAsDouble();
+        inputs.gyroPitchDeg = pigeon2.getPitch().getValueAsDouble();
+        inputs.gyroYawDeg = pigeon2.getYaw().getValueAsDouble();
+
         inputs.fpgaTimeSeconds = Timer.getFPGATimestamp();
         inputs.currentTimeSeconds = Utils.getCurrentTimeSeconds();
 

@@ -111,15 +111,13 @@ public class SwerveIOReal implements SwerveIO {
         inputs.gyroRollDeg = pigeon2.getRoll().getValueAsDouble();
         inputs.gyroPitchDeg = pigeon2.getPitch().getValueAsDouble();
         inputs.gyroYawDeg = pigeon2.getYaw().getValueAsDouble();
+
         inputs.fpgaTimeSeconds = Timer.getFPGATimestamp();
         inputs.currentTimeSeconds = Utils.getCurrentTimeSeconds();
 
         for (int i = 0; i < modules.length; i++) {
             modules[i].updateInputs(moduleIOInputs[i]);
         }
-
-//        Logger.recordOutput("Rotation3dRoll", Units.radiansToDegrees(drivetrain.getRotation3d().getX()));
-//        Logger.recordOutput("PigeonRollDeg", drivetrain.getPigeon2().getRoll().getValueAsDouble());
     }
 
     @Override

@@ -16,10 +16,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -357,6 +354,15 @@ public class Swerve extends SubsystemExt {
         Logger.recordOutput(LogKey + "/DesiredStates", getModuleLastDesiredStates());
         Logger.recordOutput(LogKey + "/CurrentStates", getModuleStates());
 
+        Logger.recordOutput("getRotation3d()", inputs.gyroRotation3d);
+        Logger.recordOutput("getRotation3d()_Pose", new Pose3d(Translation3d.kZero, inputs.gyroRotation3d));
+        Logger.recordOutput("getRotation3d()_RollDeg", Units.radiansToDegrees(inputs.gyroRotation3d.getX()));
+        Logger.recordOutput("getRotation3d()_PitchDeg", Units.radiansToDegrees(inputs.gyroRotation3d.getY()));
+        Logger.recordOutput("getRotation3d()_YawDeg", Units.radiansToDegrees(inputs.gyroRotation3d.getZ()));
+        Logger.recordOutput("getRoll()_Deg", inputs.gyroRollDeg);
+        Logger.recordOutput("getPitch()_Deg", inputs.gyroPitchDeg);
+        Logger.recordOutput("getYaw()_Deg", inputs.gyroYawDeg);
+
         Logger.recordOutput(OdometryLogKey + "/Robot2d", robotPose);
         Logger.recordOutput(OdometryLogKey + "/Robot3d", GyroUtils.robotPose2dToPose3dWithGyro(
                 robotPose,
@@ -421,12 +427,12 @@ public class Swerve extends SubsystemExt {
         return poseBuffer.getSample(atTimestamp);
     }
 
-    public Rotation2d getPitch() {
-        return Rotation2d.fromDegrees(inputs.gyroPitchDeg);
-    }
-
     public Rotation2d getRoll() {
         return Rotation2d.fromDegrees(inputs.gyroRollDeg);
+    }
+
+    public Rotation2d getPitch() {
+        return Rotation2d.fromDegrees(inputs.gyroPitchDeg);
     }
 
     public Rotation2d getYaw() {
@@ -437,7 +443,7 @@ public class Swerve extends SubsystemExt {
         return new Rotation3d(
                 Units.degreesToRadians(inputs.gyroRollDeg),
                 Units.degreesToRadians(inputs.gyroPitchDeg),
-                Units.degreesToRadians(inputs.gyroYawDeg)
+                getYaw().getRadians()
         );
 //        return inputs.gyroRotation3d;
 //        return new Rotation3d(getRoll().getRadians(), getPitch().getRadians(), getYaw().getRadians());
