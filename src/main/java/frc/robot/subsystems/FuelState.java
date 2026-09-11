@@ -128,8 +128,8 @@ public class FuelState extends VirtualSubsystem {
     }
 
     private void configureStateTriggers() {
-        intake.isIntaking.and(hasFuel.negate())
-                .whileTrue(CommandsExt.defaultCommand(indexer.toFeed()));
+//        intake.isIntaking.and(hasFuel.negate())
+//                .whileTrue(CommandsExt.defaultCommand(indexer.toFeed()));
     }
 
     private void configureSimTriggers() {

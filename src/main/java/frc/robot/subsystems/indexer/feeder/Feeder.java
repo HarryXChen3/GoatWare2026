@@ -19,12 +19,13 @@ public class Feeder extends SubsystemExt {
 
     public enum Goal {
         OFF(0),
-        FEED(40);
+//        FEED(40);
+        FEED(12);
 
-        public final double velocityRotsPerSec;
+        public final double voltageVolts;
 
-        Goal(final double velocityRotsPerSec) {
-            this.velocityRotsPerSec = velocityRotsPerSec;
+        Goal(final double voltageVolts) {
+            this.voltageVolts = voltageVolts;
         }
     }
 
@@ -124,9 +125,15 @@ public class Feeder extends SubsystemExt {
         feederIO.toFeederVelocity(velocityRotsPerSec);
     }
 
+    private void setVoltageImpl(final double voltageVolts) {
+        velocitySetpointRotsPerSec = 0;
+        feederIO.toFeederVoltage(voltageVolts);
+    }
+
     private void setGoalImpl(final Goal goal) {
         desiredGoal = InternalGoal.fromGoal(goal);
-        setVelocityImpl(goal.velocityRotsPerSec);
+//        setVelocityImpl(goal.velocityRotsPerSec);
+        setVoltageImpl(goal.voltageVolts);
     }
 
     public Command toGoal(final Goal goal) {

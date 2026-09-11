@@ -41,6 +41,9 @@ public interface SwerveIO {
         public SwerveDriveState[] states = new SwerveDriveState[0];
 
         public Rotation3d gyroRotation3d = Rotation3d.kZero;
+        public double gyroRollDeg = 0;
+        public double gyroPitchDeg = 0;
+        public double gyroYawDeg = 0;
         public double fpgaTimeSeconds = 0;
         public double currentTimeSeconds = 0;
 

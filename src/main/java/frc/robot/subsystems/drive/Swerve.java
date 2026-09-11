@@ -422,11 +422,11 @@ public class Swerve extends SubsystemExt {
     }
 
     public Rotation2d getPitch() {
-        return Rotation2d.fromRadians(inputs.gyroRotation3d.getY());
+        return Rotation2d.fromDegrees(inputs.gyroPitchDeg);
     }
 
     public Rotation2d getRoll() {
-        return Rotation2d.fromRadians(inputs.gyroRotation3d.getX());
+        return Rotation2d.fromDegrees(inputs.gyroRollDeg);
     }
 
     public Rotation2d getYaw() {
@@ -434,7 +434,13 @@ public class Swerve extends SubsystemExt {
     }
 
     public Rotation3d getRotation3d() {
-        return new Rotation3d(getRoll().getRadians(), getPitch().getRadians(), getYaw().getRadians());
+        return new Rotation3d(
+                Units.degreesToRadians(inputs.gyroRollDeg),
+                Units.degreesToRadians(inputs.gyroPitchDeg),
+                Units.degreesToRadians(inputs.gyroYawDeg)
+        );
+//        return inputs.gyroRotation3d;
+//        return new Rotation3d(getRoll().getRadians(), getPitch().getRadians(), getYaw().getRadians());
     }
 
     public ChassisSpeeds getRobotRelativeSpeeds() {

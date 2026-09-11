@@ -4,6 +4,7 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.*;
 import edu.wpi.first.math.Matrix;
@@ -11,9 +12,11 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.CircularBuffer;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.subsystems.drive.constants.SwerveConstants.CTRESwerve;
+import org.littletonrobotics.junction.Logger;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -103,12 +106,20 @@ public class SwerveIOReal implements SwerveIO {
         }
         inputs.states = states;
         inputs.gyroRotation3d = drivetrain.getRotation3d();
+
+        final Pigeon2 pigeon2 = drivetrain.getPigeon2();
+        inputs.gyroRollDeg = pigeon2.getRoll().getValueAsDouble();
+        inputs.gyroPitchDeg = pigeon2.getPitch().getValueAsDouble();
+        inputs.gyroYawDeg = pigeon2.getYaw().getValueAsDouble();
         inputs.fpgaTimeSeconds = Timer.getFPGATimestamp();
         inputs.currentTimeSeconds = Utils.getCurrentTimeSeconds();
 
         for (int i = 0; i < modules.length; i++) {
             modules[i].updateInputs(moduleIOInputs[i]);
         }
+
+//        Logger.recordOutput("Rotation3dRoll", Units.radiansToDegrees(drivetrain.getRotation3d().getX()));
+//        Logger.recordOutput("PigeonRollDeg", drivetrain.getPigeon2().getRoll().getValueAsDouble());
     }
 
     @Override

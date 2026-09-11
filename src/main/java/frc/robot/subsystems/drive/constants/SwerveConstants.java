@@ -1,6 +1,7 @@
 package frc.robot.subsystems.drive.constants;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -117,6 +118,12 @@ public class SwerveConstants {
                 .withKP(100).withKD(0.5)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
 
+        private static final Pigeon2Configuration Pigeon2Configuration = new Pigeon2Configuration(); static {
+            Pigeon2Configuration.MountPose.MountPoseRoll = -179.78790283203125;
+            Pigeon2Configuration.MountPose.MountPosePitch = -1.0124882459640503;
+            Pigeon2Configuration.MountPose.MountPoseYaw = -0.12568889558315277;
+        }
+
         private static final double SlipCurrentAmps = 80;
         private static final InvertedValue DriveMotorInverted = InvertedValue.CounterClockwise_Positive;
         private static final InvertedValue TurnMotorInverted = InvertedValue.CounterClockwise_Positive;
@@ -148,7 +155,8 @@ public class SwerveConstants {
 
         public static final SwerveDrivetrainConstants DrivetrainConstants = new SwerveDrivetrainConstants()
                 .withCANBusName(Config.canBus.id)
-                .withPigeon2Id(Gyro.gyroId);
+                .withPigeon2Id(Gyro.gyroId)
+                .withPigeon2Configs(Pigeon2Configuration);
 
         public static final SwerveModuleConstantsFactory<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration> ConstantCreator =
                 new SwerveModuleConstantsFactory<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration>()

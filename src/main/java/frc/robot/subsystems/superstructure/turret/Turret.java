@@ -74,8 +74,6 @@ public class Turret extends SubsystemExt {
     private double positionSetpointRots;
     private double velocitySetpointRotsPerSec;
 
-    private boolean positionSeeded = false;
-
     public final LoggedTrigger atSetpoint = group.t(
             "AtSetpoint",
             () -> MathUtil.isNear(
